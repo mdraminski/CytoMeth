@@ -1,0 +1,19 @@
+### TOOLS - path and tools cfg file
+tools_path: "./tools/"
+tools_config: "tools.conf.csv"
+
+### TOOLS Definition 
+bedtools: "bedtools"
+samtools: "samtools"
+bamtools: "bamtools"
+bamUtil: "bam"
+bsmap: "bsmap"
+methratio: "methratio.py"
+trimmomatic: "Trimmomatic/trimmomatic-0.36.jar" 
+picard: "Picard/picard.jar" 
+gatk: "/GATK/GenomeAnalysisTK.jar"
+fastqc:
+bisSNP:
+
+### Reference Data - Path
+ref_data_path: "./RefData/"

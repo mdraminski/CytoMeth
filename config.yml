@@ -1,0 +1,16 @@
+#General Params
+threads: 12
+java_mem: 16G
+overwrite_results: TRUE
+clean_tmp_files: TRUE
+plot_format: "pdf"
+
+#in/out paths
+input_path: "./input/"
+results_path: "./results/"
+#anaconda_bin_path: "/opt/anaconda/bin/"
+
+### Reference Data Definition
+reference_sequence_file: "hg38_phage.fa"
+intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
+trimmomatic_adapter: "Trimmomatic-0.36/adapters/TruSeq3-PE-2.fa"

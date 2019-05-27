@@ -1,0 +1,109 @@
+- **TODO: update**: Blad po GATK dla fake 1 i fake 2
+- **TODO: update**: wciaz pojawiaja sie warningi - nie przekonuje mnie to ze to tak moze byc i dziala
+
+#robienie pliku dict
+java -jar picard.jar CreateSequenceDictionary  R= hg38.fa O= hg38.dict
+
+
+## TODO: te referencyjne pliki sa nieuzywane!
+#ensmbl_gene_bed: "hg38_genes_ensembl_annotateWithGeneParts.bed"
+#ensmbl_cpg_bed: "cpgIslandExthg38.bed"
+#clinvar: "clinvar_downgrade_head_chr.vcf"
+
+
+## TODO te dwa narzedzia nieuzywane sa!!!
+#fastqc: "FastQC/fastqc" 
+#BisSNP: "BisSNP/BisSNP-0.82.2.jar"
+
+
+https://brb.nci.nih.gov/new_updates/GalaxyDoc.pdf
+wget ftp://ftp.sra.ebi.ac.uk/vol1/ERA645/ERA645809/fastq/PHESPV0057.R1.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/ERA645/ERA645809/fastq/PHESPV0057.R2.fastq.gz
+
+
+#########################
+### BEDTools - 'intersect 
+#########################
+-nonamecheck
+
+LOCUS       NC_001416              48502 bp    DNA     linear   PHG 13-AUG-2018
+DEFINITION  Enterobacteria phage lambda, complete genome.
+
+NC_001416	4500	6500
+chr1	13432	13596
+
+Sprawdzic 
+# [1] "ZBOT: : Running BEDTools - 'intersect - capture region'..."
+# ***** WARNING: File /home/mdraminski/workspace/ZBOT/ref_data/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed has inconsistent naming convention for record:
+# chr1	13432	13596
+# 
+# ***** WARNING: File /home/mdraminski/workspace/ZBOT/ref_data/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed has inconsistent naming convention for record:
+# chr1	13432	13596
+
+
+
+samtools view small_FAKE03.rmdups.bam | head
+
+C00134:131:H3WT2BCX2:2:1206:10076:40255	99	chr10	65811349	255	76M	=	65811467	194	TTTAGATGTGTTCGGAGTTTTTTTTTTTTTGGTGGGTTCGTGGTTTCGTTGGTTTAGGAGTGAAGTTGTAGATTTT	AGAGGIIIGGIIIIIIIIGIGGGIIIIIIGGGAGGIGIIGAGGGGGG.<GGGAGGGGGAGAGGAG.A.<<GAAGGG	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:4	ZS:Z:++
+C00134:131:H3WT2BCX2:2:1206:10076:40255	147	chr10	65811467	255	76M	=	65811349	-194	GTTCGTTTTTTTCGGTGGGTTTGTGGTTTCGTTGGGTTTAGGAGTGAAGTTGTAGATTTTTGCGGTGAGTGTTATA	A.GGGIIIGGGGAAG<GGGAA.AGGGGGG<AGIIGGAGGGGGIGIGGAGGGIGGIIGIGGGGAGGAGAGIIAGG.G	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:4	ZS:Z:+-
+C00134:131:H3WT2BCX2:1:1105:8003:16422	99	chr12	82801362	255	76M	=	82801450	164	GAGTGAGTAGTAGTAAGATTTATTGTTAAGAGTAAAAGAATAAAGTTTTTATCGTATAGAAGGGGATTTAAGCGGG	GGGGGGGGGIGGGGIGIIIIIIIIIIIIIIIIIIIIGGGIIIGGIGIIIIIIIIGGGIIIGIIIIIIIIIIIGIII	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:3	ZS:Z:++
+C00134:131:H3WT2BCX2:1:1105:8003:16422	147	chr12	82801450	255	76M	=	82801362	-164	GTTTCGGAAGTTTGTTTTTTTTTTTTTATTTGGTTTTATTTATATTTTGTTGATTGGTTTATTTTATAGAGAGTTG	GGGGGGGGGGIIGGIIIIIIIIGIIIIIIIIIIIIIIGIIGGIIIIIIIIIIIIIIIGGIIIIIIIIIIIIGAGGG	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:3	ZS:Z:+-
+C00134:131:H3WT2BCX2:2:1215:15658:30544	73	chr2	137330497	255	53M	*	0	0	TTTTTTTGATGTTCGGATATGTTCGGAGTTTTTTTTTTTTTGGGGGGTTCGGG	GGGGGIIIIIIIIIIIGIIIIIIIIIGGGIIIIIIGIIIIGIG.AG.<<.<.<	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:3	ZS:Z:++
+C00134:131:H3WT2BCX2:2:1213:8544:28679	163	chr4	34335045	255	74M	=	34335172	203	TCTAATAGTCAAATATATTCAAAATTTCTTCCTTCTAATAAATTCGTAATCTCGCTAACTCAAAAATAAAACTA	AGGG<GG<GGGGGGGG<AAGGIAGGGGAGAAGG.<GGIAGG.GGGGGGAGAGGAAAAGAGGGGGGGGGIGGGA<	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:1	ZS:Z:--
+C00134:131:H3WT2BCX2:2:1213:8544:28679	83	chr4	34335172	255	76M	=	34335045	-203	CATTCCTCCCGATAAACTCGTAATCTCCCTAAACTCAAAAATAAAACTACAAATCTTTACGATAAATATTACAACT	GGGIIIIIIGIIIIIIGGIIIIIGAGGGIIIGGGGIIIGIIIIIGGGGIIIIIGGGGGIIIIIGGGIIIIIGAGAG	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:1	ZS:Z:-+
+C00134:131:H3WT2BCX2:1:1209:5170:47654	163	chr4	86548113	255	75M	=	86548251	214	ACCACGCTACTTTTATAAACTATAACACTCACCGCGAAAACCCGCAACTTCACTCCTAAAACCAACGAAACCACA	AGGGAGIGIIIIIIIIIIIIIGIGIIIIIIIIGGGGIIIIIIIIIGIIIIIIIIIIIIIIIIIIGIGGIIIIGIG	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:4	ZS:Z:--
+C00134:131:H3WT2BCX2:1:1209:5170:47654	83	chr4	86548251	255	76M	=	86548113	-214	AAAATCGACAACTTCACTCATAAACCAACGAAACCACGAACCCACCAAAAAAAAAAAAACTCCAAACACATCCAAA	IIGGGIGGAGGGGGAGGGGIIIGGGGGGGGGIGGGAIIIIGGA<GGIIIIIIIIIIIIIIIIGIGGGGIIIGGGGG	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:6	ZS:Z:-+
+C00134:131:H3WT2BCX2:1:1109:15192:16737	99	chr5	77785878	255	76M	=	77786011	200	TTTGAGCGTAAGTATTTTGTGTGGATTGGAGGTTTTATTTTGGTTTCGTTGTTTATTTTTTAGTAGATGTGGATTA	AGGG.GGGGG..<.G<G.<.<GGG..<GAAGGAGGGGGGIIG<GA.GAG<<GGIIIAGAA.GG<<GAGGGAA<<.G	PG:Z:MarkDuplicates	RG:Z:SAMPLE	NM:i:0	ZS:Z:++
+
+
+
+
+
+
+
+
+
+
+INFO  03:31:09,476 ProgressMeter - chrUn_GL000216v2:160741   3.91173860359E11    81.0 m       0.0 s       98.3%    82.4 m      84.0 s
+INFO  03:31:39,486 ProgressMeter -   chrX:69128716   3.9181847425E11    81.5 m       0.0 s       99.0%    82.3 m      47.0 s
+INFO  03:32:09,494 ProgressMeter -  chrX:152945156   3.94171994245E11    82.0 m       0.0 s       99.9%    82.1 m       6.0 s
+INFO  03:32:19,356 DepthOfCoverage - Printing summary info
+INFO  03:32:19,359 DepthOfCoverage - Printing locus summary
+INFO  03:32:19,374 ProgressMeter -            done   3.94697747869E11    82.2 m       0.0 s      100.0%    82.2 m       0.0 s
+INFO  03:32:19,374 ProgressMeter - Total runtime 4930.55 secs, 82.18 min, 1.37 hours
+INFO  03:32:19,387 MicroScheduler - 1570 reads were filtered out during the traversal out of approximately 1239056 total reads (0.13%)
+INFO  03:32:19,388 MicroScheduler -   -> 1570 reads (0.13% of total) failing BadCigarFilter
+INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing DuplicateReadFilter
+INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing FailsVendorQualityCheckFilter
+INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing MalformedReadFilter
+INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing NotPrimaryAlignmentFilter
+INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing UnmappedReadFilter
+------------------------------------------------------------------------------------------
+Done. ------------------------------------------------------------------------------------------
+[1] "### CytoMeth ### : Process GATK - 'depth_of_coverage' is finished. [1.37 hours]"
+[1] "### CytoMeth ### : Running BSMAP - 'methratio'..."
+[1] "### CytoMeth ### : Process BSMAP - 'methratio' is finished. [0.18 secs]"
+Error in checkIfFileExists(paste0(methyl_result_file, ".methylation_results.txt")) :
+  Error! File: '/home/mdraminski/workspace/CytoMeth/results/methyl_results/small_FAKE01.methylation_results.txt' does not exists! Cannot continue the processing!
+Calls: CytoMeth -> CytoMethSingleSample -> checkIfFileExists
+Execution halted
+mdraminski@neonki:~/workspace/CytoMeth$ 
+
+
+
+
+
+
+Podsumowanie co jeszcze nam potrzeba:
+1. manual uzupelnic MJD
+2. Potrzebne nam ze dwa jeszcze sample na ktorych proces sie nie wywala. Bartek Wojtas
+3. Odpowiedni zasob na Narwalu do umieszczenia plikow referencyjnych Pawel Bielawski+MDR
+4. Obsluga bledu dla plikow badziewnych kiedy nic sie nie zmapowalo. MDR
+5. Zdecydowac czy dodajemy BisSNP FastQC Anotacje i w jakim zakresie. MJD+MDR
+6. Poprawic problem z plikiem SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed MJD+MDR
+7. Dodac modul do testowania plikow Rafal + MJD + MDR
+8. Calosc przetestowac na nowych czystych linuxach czy sie wszystko instaluje sciaga i dziala (w pewnym zakresie to testuje) MDR
+9. Przejsc caly proces jako user 0 / beta tester i zgosic swoje uwagi jesli process nie jest dobrze opisany ma jakies bledy lub nielogicznosci MJD
+10. Jak bedzie wszystko dzialac wrzucic na GitHuba i udostepnic swiatu MDR
+11. Napisac publikacje
+

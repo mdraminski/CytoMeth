@@ -1,0 +1,18 @@
+Package: CytoMeth
+Title: CytoMeth
+Version: Version 0.9.4
+Date: 2019-05-23
+Authors@R: person('Michal', 'Draminski', email = 'michal.draminski@ipipan.waw.pl',
+                    role = c('aut', 'cre'))
+Depends: R (>= 2.70)
+Suggests: testthat
+Imports: yaml, tools, data.table, rjson, ggplot2
+Description: CytoMeth is a tool that processes methylation data designed to deal with paired-end data sequencing from Illumina.
+License: GPL-3
+LazyData: true
+NeedsCompilation: no
+Author: Michal Draminski [aut, cre]
+Maintainer: Michal Draminski <michal.draminski@ipipan.waw.pl>
+RoxygenNote: 6.1.1
+
+
