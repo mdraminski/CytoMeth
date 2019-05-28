@@ -23,7 +23,7 @@ readConfig <- function(file = "config.yml", tools.file = "./tools/tools.conf.yml
 }
 
 #########################################
-# createResultDirs
+# readCondaPath
 #########################################
 readCondaPath <- function(file = "conda.info"){
   json_data <- NA
@@ -35,6 +35,26 @@ readCondaPath <- function(file = "conda.info"){
     stop("File 'conda.info' does not exist! Please make sure anaconda is installed on your system and run: 'conda info --json > conda.info' in the CytoMeth directory.")
   }
   return(json_data)
+}
+
+#########################################
+# readPython2Path
+#########################################
+readPython2Path <- function(file = "python2.info"){
+  python2_path <- NA
+  if(file.exists(file)){
+    python2_path <- data.frame(data.table::fread(file, header = F))
+    if(is.null(python2_path))
+      stop("File 'python2.info' is empty! Please make sure python 2.* is installed on your system and run: 'whereis python2 > python2.info' in the CytoMeth directory.")
+    
+    python2_path <- as.character(python2_path[1,])
+    python2_path <- python2_path[endsWith(python2_path,'bin/python2')]
+    python2_path <- python2_path[1]
+  }
+  else{
+    stop("File 'python2.info' does not exist! Please make sure python 2.* is installed on your system and run: 'whereis python2 > python2.info' in the CytoMeth directory.")
+  }
+  return(python2_path)
 }
 
 #########################################
@@ -82,7 +102,7 @@ checkRequiredTools <- function(config){
     file.path(config$anaconda_bin_path, config$bamtools),
     file.path(config$anaconda_bin_path, config$bamUtil),
     file.path(config$anaconda_bin_path, config$bsmap),
-    file.path(config$anaconda_bin_path, config$methratio),
+    file.path(config$tools_path, config$methratio),
     file.path(config$tools_path, config$trimmomatic),
     file.path(config$tools_path, config$picard),
     file.path(config$tools_path, config$gatk))
@@ -93,7 +113,7 @@ checkRequiredTools <- function(config){
                   " is not available! Please install Required Tools! (See 'Required Tools' section in CytoMeth manual."))
     }
   }
-  print("All required tools are available. OK.")
+  cat("All required tools are available. OK.\n")
   return(T)
 }
 
@@ -114,7 +134,7 @@ checkRequiredFiles <- function(config){
                   " is not available! Please download Reference Files! (See 'Reference Files' section in CytoMeth manual."))
     }
   }
-  print("All required reference files are available. OK.")
+  cat("All required reference files are available. OK.\n")
   return(T)
 }
 
@@ -122,19 +142,31 @@ checkRequiredFiles <- function(config){
 # checkIfFileExists
 #########################################
 checkIfFileExists <- function (file){
-  if(!file.exists(file))
-    stop(paste0("Error! File: '",file,"' does not exists! Cannot continue the processing!"))
+  if(!file.exists(file)){
+    print(paste0("Error! File: '",file,"' does not exists! Cannot continue the processing!"))
+    return(F)
+  }else{
+    return(T)
+  }
+}
+
+#########################################
+# skipProcess
+#########################################
+skipProcess <- function(app_name, process_name, subprocess_name, dir_name){
+  dir_name <- gsub("//","/",dir_name)
+  cat(paste0(app_name,": Process ",process_name, " - '",subprocess_name,"' is skipped. Result exists in the directory: ", dir_name, "\n"))
 }
 
 #########################################
 # runSystemCommand
 #########################################
 runSystemCommand <- function(app_name, process_name, subprocess_name, command){
-  print(paste0(app_name, ": Running ", process_name, " - '", subprocess_name, "'..."))
+  cat(paste0(app_name, ": Running ", process_name, " - '", subprocess_name, "'...\n"))
   start_time <- Sys.time()
   system(command)
   stop_time <- Sys.time()
-  print(paste0(app_name, ": Process ",process_name," - '",subprocess_name,"' is finished. [", format(stop_time - start_time, digits=3) ,"]"))
+  cat(paste0(app_name, ": Process ",process_name," - '",subprocess_name,"' is finished. [", format(stop_time - start_time, digits=3) ,"]\n"))
 }
 
 #########################################
@@ -152,4 +184,13 @@ getLinesNumber <- function(filepath) {
   }
   close(con)
   return(lines_cnt)
+}
+
+#########################################
+# qc2dataframe
+#########################################
+qc2dataframe <- function(qc_report){
+  df <- t(as.data.frame(qc_report))
+  df <- data.frame(metric = row.names(df), value = as.character(df[,1]))
+  return(df)
 }

@@ -37,7 +37,8 @@ CytoMethQCReport <- function(config, qc_colors = c("azure1","darkolivegreen3","a
   qc_summary_coverage$Coverage <- factor(qc_summary_coverage$Coverage, levels = c("cov<10","cov>=10"))
   
   gg_coverage <- ggplot(qc_summary_coverage, aes(fill=Coverage, y=Frequency, x=SampleID)) + 
-    geom_bar(stat="identity", position="fill") + 
+    geom_bar(stat="identity") + 
+    #geom_bar(stat="identity", position="fill") + 
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
     theme(legend.text=element_text(size=15)) + 
     theme(text = element_text(size=15)) +

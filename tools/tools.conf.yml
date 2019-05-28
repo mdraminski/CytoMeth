@@ -8,12 +8,15 @@ samtools: "samtools"
 bamtools: "bamtools"
 bamUtil: "bam"
 bsmap: "bsmap"
-methratio: "methratio.py"
+methratio: "methratio/methratio.py"
 trimmomatic: "Trimmomatic/trimmomatic-0.36.jar" 
 picard: "Picard/picard.jar" 
-gatk: "/GATK/GenomeAnalysisTK.jar"
+gatk: "GATK/GenomeAnalysisTK.jar"
 fastqc:
 bisSNP:
+
+### python2 path
+python2: "python2"
 
 ### Reference Data - Path
 ref_data_path: "./RefData/"

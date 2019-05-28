@@ -1,20 +1,22 @@
+---
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
 # CytoMeth
 <!--- 
 CytoMeth is a tool that processes methylation data designed to deal with paired-end data sequencing from Illumina. 
 -->
 CytoMeth tool compiles a set of open source software named in the Roche pipeline guidelines to perform SeqCap Epi data analysis. The pipe includes read quality assessment, read filtering, mapping to a reference genome, removal of PCR duplicates, assessment of coverage statistics, analyse methylation and variant calling and filtering as well as some additional functionalities added to improve the process and facilitate obtaining the processed results. Here, to obtain methylomes for brain tumor samples we used SeqCap Epi CpGiant Methylation panel and performed bisulphite conversion followed by Illumina NGS sequencing and CytoMeth tool analysis.
 
-# Authors
-This tool has been created and implemented by:
-
-- Michal Draminski 1 (author, developer, maintainer)
-- Agata Dziedzic 1 (author, developer)
-- Bartosz Wojtas 2 (author)
-- Rafal Guzik (author)
-- Michal J. Dabrowski 1 (author)
-
-1. Computational Biology Lab of the Polish Academy of Science
-2. Neurobiology Center, Nencki Institute of Experimental Biology
+## Table of contents
+* [Installation](#installation)
+* [Usage](#usage)
+* [Authors](#authors)
+* [License](#license)
+* [Acknowledgments](#acknowledgments)
 
 # Installation
 
@@ -23,10 +25,10 @@ CytoMeth is implemented as a set of R scripts that run various tools in a specif
 - R and Rscript
 - Java 8 or above
 - Conda - an open source package management system
-- Python
+- Python 2.x
 - wget tool
 
-If you are sure all of the above is working correctly (*R*,  *conda*, *Java*) on your system you can skip the next section and go to the section CytoMeth installation.
+If you are sure all of the above is working correctly (*R*,  *conda*, *Java*, *python 2.x*) on your system you can skip the next section and go to the section CytoMeth installation.
 
 ## Preparation of the Environment
 Check if there is R installed on your machine. Type in the console window:
@@ -75,7 +77,7 @@ Now, conda should be available from the console window. Open the new one and typ
 ```bash
 conda info
 ```
-You should see all information about *conda* environment.
+You should see all information about conda environment.
 
 Check Java version. It is recommended to use Java 8 (1.8) with CytoMeth.
 ```bash
@@ -89,9 +91,19 @@ sudo apt install oracle-java8-installer
 sudo apt install oracle-java8-set-default
 ```
 
+Check python version. It is recommended to use python 2.x with CytoMeth.
+```bash
+python2 --version
+```
+If your OS lacks of python 2.x please install it with the following commnads:
+```bash
+sudo apt-get update
+sudo apt-get install python2  
+```
+
 ## Installation of CytoMeth components
 
-To install or update all required *R* and *conda* packages, download required reference files and set up CytoMeth,
+To install or update all required *R* and conda packages, download required reference files and set up CytoMeth,
 run the '*install.sh*' script located in CytoMeth directory. For the first time select '*y*' option to install all required by CytoMeth components. All required packages and files should be installed or updated automatically and if that succeeded there is no need of any manual installation presented below. If there is any missing component CytoMeth does not run with appropriate warning and you may look at specific section 'Required Tools' or 'Reference Files'. In that case please also try to rerun the script in the console window.
 ```bash
 ./install.sh
@@ -122,19 +134,19 @@ The follwing *conda* packages are required by CytoMeth and these packages are au
 
 These tools can be also manually installed by typing the command in the console window:
 ```bash
-conda update conda;
-conda install -y -c bioconda bsmap;
-conda install -y -c bioconda bamtools;
-conda install -y -c bioconda bamutil;
-conda install -y -c bioconda bedtools;
-conda install -y -c bioconda samtools;
+conda update conda
+conda install -y -c bioconda bsmap
+conda install -y -c bioconda bamtools
+conda install -y -c bioconda bamutil
+conda install -y -c bioconda bedtools
+conda install -y -c bioconda samtools
 ```
 
 #### Required Java Tools
-Java tools (in CytoMeth '*tools*' directory) are provided with CytoMeth in the following versions:
+Java tools (in CytoMeth '*/tools/*' directory) are provided with CytoMeth in the following versions:
 
 - Trimmomatic (ver. 0.36)
-- GATK (ver. 3.8)
+- GATK (ver. 3.8.1)
 - picard (ver. 2.20.1)
 
 #### Required 'conda.info' file 
@@ -150,18 +162,18 @@ This file is also created during installation process.
 Reference files required by CytoMeth are automatically installed by '*install.sh*' script. If you would like to download them manually plese run the following commands in console window:
 
 ```bash
-wget -c -O ./RefData/hg38.fa http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38.fa;
-wget -c -O ./RefData/hg38.fa.fai http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38.fa.fai;
-wget -c -O ./RefData/hg38.fa.dict http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38.dict;
-wget -c -O ./RefData/hg38_phage.fa http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38_phage.fa;
-wget -c -O ./RefData/hg38_phage.fa.fai http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38_phage.fa.fai;
-wget -c -O ./RefData/hg38_phage.dict http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38_phage.dict;
-wget -c -O ./RefData/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed;
+wget -c -O ./RefData/hg38.fa http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38.fa
+wget -c -O ./RefData/hg38.fa.fai http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38.fa.fai
+wget -c -O ./RefData/hg38.fa.dict http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38.dict
+wget -c -O ./RefData/hg38_phage.fa http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38_phage.fa
+wget -c -O ./RefData/hg38_phage.fa.fai http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38_phage.fa.fai
+wget -c -O ./RefData/hg38_phage.dict http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38_phage.dict
+wget -c -O ./RefData/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed
 ```
 All reference files by default are located in */RefData/* directory.
 
 
-# Usage of CytoMeth
+# Usage
 
 ## Configuration
 
@@ -265,7 +277,20 @@ Prc_of_Cs_in_panel_CpG_cov_min10: 79.7550059
 Prc_of_Cs_in_panel_CpG_cov_max9: 20.2449941
 ```
 
-# CytoMeth License
+# Authors
+This tool has been created and implemented by:
+
+- Michal Draminski [1] (author, developer, maintainer)
+- Agata Dziedzic [1] (author, developer)
+- Rafal Guzik (author)
+- Bartosz Wojtas [2] (author)
+- Michal J. Dabrowski [1] (author)
+
+1. Computational Biology Lab, Polish Academy of Science, Warsaw, Poland
+2. Neurobiology Center, Nencki Institute of Experimental Biology, Warsaw, Poland
+
+
+# License
 This program and the accompanying materials are made available under the terms of the GNU Public License v3.0 which accompanies this distribution, and is available at [http://www.gnu.org/licenses/gpl.html](http://www.gnu.org/licenses/gpl.html). For more information please see LICENSE file.
 
 The set of tools, used by or provided with CytoMeth is under following licenses:
@@ -280,3 +305,5 @@ The set of tools, used by or provided with CytoMeth is under following licenses:
 - methratio - BSD 3-Clause License https://github.com/zyndagj/BSMAPz/blob/master/methratio.py
 - BisSNP GNU General Public License https://github.com/dnaase/Bis-tools/blob/master/Bis-SNP/src/main/java/edu/usc/epigenome/uecgatk/bissnp/BisSNP.java
 - samtools - The MIT/Expat License https://github.com/samtools/htslib-plugins/blob/master/LICENSE
+
+# Acknowledgments

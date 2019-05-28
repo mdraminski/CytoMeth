@@ -1,6 +1,12 @@
 CytoMeth - Changes
 =============
 
+## Version 0.9.6
+* GATK version 3.8.1
+* improved error handling and missing file checking
+* improved skipping of already calculated phases
+* improved README
+* methratio.py fixed and added (-X removed)
 
 ## Version 0.9.5
 * first GitHub Version

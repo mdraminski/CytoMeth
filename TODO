@@ -1,4 +1,3 @@
-- **TODO: update**: Blad po GATK dla fake 1 i fake 2
 - **TODO: update**: wciaz pojawiaja sie warningi - nie przekonuje mnie to ze to tak moze byc i dziala
 
 #robienie pliku dict
@@ -60,37 +59,11 @@ C00134:131:H3WT2BCX2:1:1109:15192:16737	99	chr5	77785878	255	76M	=	77786011	200	
 
 
 
+methratio.py
+- skip jest a nie correct
+parser.add_option("-i", "--ct-snp", dest="CT_SNP", help='how to handle CT SNP ("no-action", "correct", "skip"), default: "correct".', default="correct"
 
-
-
-
-INFO  03:31:09,476 ProgressMeter - chrUn_GL000216v2:160741   3.91173860359E11    81.0 m       0.0 s       98.3%    82.4 m      84.0 s
-INFO  03:31:39,486 ProgressMeter -   chrX:69128716   3.9181847425E11    81.5 m       0.0 s       99.0%    82.3 m      47.0 s
-INFO  03:32:09,494 ProgressMeter -  chrX:152945156   3.94171994245E11    82.0 m       0.0 s       99.9%    82.1 m       6.0 s
-INFO  03:32:19,356 DepthOfCoverage - Printing summary info
-INFO  03:32:19,359 DepthOfCoverage - Printing locus summary
-INFO  03:32:19,374 ProgressMeter -            done   3.94697747869E11    82.2 m       0.0 s      100.0%    82.2 m       0.0 s
-INFO  03:32:19,374 ProgressMeter - Total runtime 4930.55 secs, 82.18 min, 1.37 hours
-INFO  03:32:19,387 MicroScheduler - 1570 reads were filtered out during the traversal out of approximately 1239056 total reads (0.13%)
-INFO  03:32:19,388 MicroScheduler -   -> 1570 reads (0.13% of total) failing BadCigarFilter
-INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing DuplicateReadFilter
-INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing FailsVendorQualityCheckFilter
-INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing MalformedReadFilter
-INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing NotPrimaryAlignmentFilter
-INFO  03:32:19,388 MicroScheduler -   -> 0 reads (0.00% of total) failing UnmappedReadFilter
-------------------------------------------------------------------------------------------
-Done. ------------------------------------------------------------------------------------------
-[1] "### CytoMeth ### : Process GATK - 'depth_of_coverage' is finished. [1.37 hours]"
-[1] "### CytoMeth ### : Running BSMAP - 'methratio'..."
-[1] "### CytoMeth ### : Process BSMAP - 'methratio' is finished. [0.18 secs]"
-Error in checkIfFileExists(paste0(methyl_result_file, ".methylation_results.txt")) :
-  Error! File: '/home/mdraminski/workspace/CytoMeth/results/methyl_results/small_FAKE01.methylation_results.txt' does not exists! Cannot continue the processing!
-Calls: CytoMeth -> CytoMethSingleSample -> checkIfFileExists
-Execution halted
-mdraminski@neonki:~/workspace/CytoMeth$ 
-
-
-
+conda install -c zyndagj bsmapz 
 
 
 
