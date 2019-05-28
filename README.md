@@ -1,10 +1,3 @@
----
-output:
-  pdf_document: default
-  word_document: default
-  html_document: default
----
-
 # CytoMeth
 <!--- 
 CytoMeth is a tool that processes methylation data designed to deal with paired-end data sequencing from Illumina. 
