@@ -1,4 +1,34 @@
-- **TODO: update**: wciaz pojawiaja sie warningi - nie przekonuje mnie to ze to tak moze byc i dziala
+Cytometh:
+- GitHub + readme
+- install.sh
+- conda + java tools
+- New tools (bsmap 2.6 bsmapz - methratio.py fixed python 2.x, gatk 3.8.1 log4j)
+- pliki referencyjne i sample na QNAP dostepne przez www
+- porzadek kodu CM + QC
+- kazda faza sprawdza istnienie plikow + sprawdzanie poprawnosci - jeden wspolny interface
+- Problem z WARNING
+
+Inne:
+- users default group ZBO
+- strona zmadbm podpieta pod zbo
+- AI
+
+
+
+Podsumowanie co jeszcze nam potrzeba:
+1. manual uzupelnic MJD !DONE!
+2. Potrzebne nam ze dwa malutkie sample na ktorych proces sie nie wywala. Bartek Wojtas
+3. Odpowiedni zasob na Narwalu do umieszczenia plikow referencyjnych Pawel Bielawski+MDR !DONE!
+4. Obsluga bledu dla plikow badziewnych kiedy nic sie nie zmapowalo. MDR !DONE!
+5. Zdecydowac czy dodajemy BisSNP FastQC Anotacje i w jakim zakresie. MJD+MDR
+6. Poprawic problem z plikiem SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed MJD+MDR
+7. Dodac modul do testowania plikow Rafal + MJD + MDR
+8. Calosc przetestowac na nowych czystych linuxach czy sie wszystko instaluje sciaga i dziala (w pewnym zakresie to testuje) MDR
+9. Przejsc caly proces jako user 0 / beta tester i zgosic swoje uwagi jesli process nie jest dobrze opisany ma jakies bledy lub nielogicznosci MJD
+10. Jak bedzie wszystko dzialac wrzucic na GitHuba i udostepnic swiatu MDR
+11. Napisac publikacje
+
+
 
 #robienie pliku dict
 java -jar picard.jar CreateSequenceDictionary  R= hg38.fa O= hg38.dict
@@ -23,21 +53,28 @@ wget ftp://ftp.sra.ebi.ac.uk/vol1/ERA645/ERA645809/fastq/PHESPV0057.R2.fastq.gz
 #########################
 ### BEDTools - 'intersect 
 #########################
--nonamecheck
-
-LOCUS       NC_001416              48502 bp    DNA     linear   PHG 13-AUG-2018
-DEFINITION  Enterobacteria phage lambda, complete genome.
-
-NC_001416	4500	6500
-chr1	13432	13596
-
-Sprawdzic 
-# [1] "ZBOT: : Running BEDTools - 'intersect - capture region'..."
+# [1] "CytoMeth: : Running BEDTools - 'intersect - capture region'..."
 # ***** WARNING: File /home/mdraminski/workspace/ZBOT/ref_data/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed has inconsistent naming convention for record:
 # chr1	13432	13596
 # 
 # ***** WARNING: File /home/mdraminski/workspace/ZBOT/ref_data/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed has inconsistent naming convention for record:
 # chr1	13432	13596
+
+
+src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
+        #flaga -nonamecheck
+        #" intersect -nonamecheck -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"),
+        " intersect -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"), 
+        " -b ", file.path(config$ref_data_path, config$intervals_file), 
+        " > ",paste0(on_target_result_file, "_on_target_reads"))
+
+
+NC_001416	4500	6500
+chr1	13432	13596
+
+#plik "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
+LOCUS       NC_001416              48502 bp    DNA     linear   PHG 13-AUG-2018
+DEFINITION  Enterobacteria phage lambda, complete genome.
 
 
 
@@ -57,26 +94,9 @@ C00134:131:H3WT2BCX2:1:1109:15192:16737	99	chr5	77785878	255	76M	=	77786011	200	
 
 
 
-
-
 methratio.py
 - skip jest a nie correct
 parser.add_option("-i", "--ct-snp", dest="CT_SNP", help='how to handle CT SNP ("no-action", "correct", "skip"), default: "correct".', default="correct"
 
 conda install -c zyndagj bsmapz 
-
-
-
-Podsumowanie co jeszcze nam potrzeba:
-1. manual uzupelnic MJD
-2. Potrzebne nam ze dwa jeszcze sample na ktorych proces sie nie wywala. Bartek Wojtas
-3. Odpowiedni zasob na Narwalu do umieszczenia plikow referencyjnych Pawel Bielawski+MDR
-4. Obsluga bledu dla plikow badziewnych kiedy nic sie nie zmapowalo. MDR
-5. Zdecydowac czy dodajemy BisSNP FastQC Anotacje i w jakim zakresie. MJD+MDR
-6. Poprawic problem z plikiem SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed MJD+MDR
-7. Dodac modul do testowania plikow Rafal + MJD + MDR
-8. Calosc przetestowac na nowych czystych linuxach czy sie wszystko instaluje sciaga i dziala (w pewnym zakresie to testuje) MDR
-9. Przejsc caly proces jako user 0 / beta tester i zgosic swoje uwagi jesli process nie jest dobrze opisany ma jakies bledy lub nielogicznosci MJD
-10. Jak bedzie wszystko dzialac wrzucic na GitHuba i udostepnic swiatu MDR
-11. Napisac publikacje
 

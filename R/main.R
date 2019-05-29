@@ -460,8 +460,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     
     if(config$overwrite_results | !(file.exists(paste0(on_target_result_file,"_on_target_reads")))) {
       src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
-                            " intersect -nonamecheck -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"),
-                            #" intersect -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"), 
+                            " intersect -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"), 
                             " -b ", file.path(config$ref_data_path, config$intervals_file), 
                             " > ",paste0(on_target_result_file, "_on_target_reads"))
       runSystemCommand(myAppName, 'BEDTools', 'Intersect on_target_reads', src_command)

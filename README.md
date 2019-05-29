@@ -16,14 +16,16 @@ CytoMeth tool compiles a set of open source software named in the Roche pipeline
 CytoMeth is implemented as a set of R scripts that run various tools in a specific sequence with specific set of parameters. To complete the installation process CytoMeth requires the following components installed on your OS:
 
 - R and Rscript
-- Java 8 or above
 - Conda - an open source package management system
 - Python 2.x
+- Java 8 (1.8) or above
 - wget tool
 
 If you are sure all of the above is working correctly (*R*,  *conda*, *Java*, *python 2.x*) on your system you can skip the next section and go to the section CytoMeth installation.
 
 ## Preparation of the Environment
+
+### R and Rscript
 Check if there is R installed on your machine. Type in the console window:
 
 ```bash
@@ -38,6 +40,8 @@ If missing Rscript only:
 ```bash
 sudo apt-get install littler
 ```
+
+### Conda
 Check if there is conda installed on your machine:
 ```bash
 conda info
@@ -72,19 +76,8 @@ conda info
 ```
 You should see all information about conda environment.
 
-Check Java version. It is recommended to use Java 8 (1.8) with CytoMeth.
-```bash
-java -version
-```
-If your OS lacks of Java please install it with the following commnads:
-```bash
-sudo add-apt-repository ppa:webupd8team/java
-sudo apt-get update
-sudo apt install oracle-java8-installer
-sudo apt install oracle-java8-set-default
-```
-
-Check python version. It is recommended to use python 2.x with CytoMeth.
+### Python 2.x
+Check your python version. It is recommended to use python 2.x with CytoMeth.
 ```bash
 python2 --version
 ```
@@ -94,10 +87,22 @@ sudo apt-get update
 sudo apt-get install python2  
 ```
 
+### Java
+Check Java version. It is recommended to use Java >=8 (1.8) with CytoMeth.
+```bash
+java -version
+```
+If your OS lacks of Java please install it with the following commnads:
+```bash
+sudo apt-get update
+sudo apt-get install openjdk-8-jre-headless
+```
+
 ## Installation of CytoMeth components
 
+### Installation script
 To install or update all required *R* and conda packages, download required reference files and set up CytoMeth,
-run the '*install.sh*' script located in CytoMeth directory. For the first time select '*y*' option to install all required by CytoMeth components. All required packages and files should be installed or updated automatically and if that succeeded there is no need of any manual installation presented below. If there is any missing component CytoMeth does not run with appropriate warning and you may look at specific section 'Required Tools' or 'Reference Files'. In that case please also try to rerun the script in the console window.
+run the '*install.sh*' script located in CytoMeth directory. For the first time select '*y*' option to install all required by CytoMeth components. All required packages and files should be installed or updated automatically and if that succeeded there is no need of any manual installation presented later below. If there is any missing component and CytoMeth stops with appropriate warning you may take a look at a specific section 'Required Tools' or 'Reference Files'. In that case please also try to rerun the script in the console window. Please notice that size of reference files is several GB and it can take a few minutes, however the downloading time strongly depends on your internet connection speed.
 ```bash
 ./install.sh
 ```
@@ -151,7 +156,6 @@ This file is also created during installation process.
 
 
 ### Reference Files
-
 Reference files required by CytoMeth are automatically installed by '*install.sh*' script. If you would like to download them manually plese run the following commands in console window:
 
 ```bash
