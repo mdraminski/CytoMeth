@@ -39,6 +39,7 @@ rsconnect/
 /RefData/
 /input/
 /useless/
+/results/
 
 conda.info
 .Rproj.user
