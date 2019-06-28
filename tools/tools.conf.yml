@@ -12,7 +12,8 @@ methratio: "methratio/methratio.py"
 trimmomatic: "Trimmomatic/trimmomatic-0.36.jar" 
 picard: "Picard/picard.jar" 
 gatk: "GATK/GenomeAnalysisTK.jar"
-fastqc:
+fastqc: "fastqc"
+seqtk: "seqtk"
 bisSNP:
 
 ### python2 path
@@ -20,3 +21,4 @@ python2: "python2"
 
 ### Reference Data - Path
 ref_data_path: "./RefData/"
+trimmomatic_adapter: "Trimmomatic/adapters/TruSeq3-PE-2.fa"

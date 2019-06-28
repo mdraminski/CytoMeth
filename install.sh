@@ -9,7 +9,7 @@ echo "Installation of Required R packages"
 echo "###################################"
 #install R packages
 while true; do
-    read -p "Do you wish to install required R packages: 'yaml', 'tools', 'data.table', 'rjson'? (y/n)" yn
+    read -p "Do you wish to install or update required R CRAN and BIOCONDUCTOR packages? (y/n)" yn
     case $yn in
         [Yy]* ) Rscript R/install.packages.R; break;;
         [Nn]* ) echo "Skipping installation"; break;;
@@ -22,13 +22,15 @@ echo "Installation of Required conda packages"
 echo "#######################################"
 #install tools by conda 
 while true; do
-    read -p "Do you wish to install required conda packages: 'bsmap', 'bamtools', 'bamutil', 'bedtools', 'samtools'? (y/n)" yn
+    read -p "Do you wish to install or update required conda packages? (y/n)" yn
     case $yn in
         [Yy]* ) conda update conda;
                 conda install -y -c bioconda bsmap;
                 conda install -y -c bioconda bamtools;
                 conda install -y -c bioconda bamutil;
                 conda install -y -c bioconda bedtools;
+                conda install -y -c bioconda seqtk;
+                conda install -y -c bioconda fastqc;
                 conda install -y -c bioconda/label/cf201901 samtools;
                 #conda install -y -c bioconda -c r samtools --override-channels;
                 break;;

@@ -1,6 +1,15 @@
 source("./R/main.R")
 conf <- readConfig()
 
-# This scrip takes set of sample_QC_summary.yml files as an input
-# It creates 1 csv table and 2 figures
-CytoMethQCReport(conf)
+# create all final summary plots
+qcsumm <- getQCSummary(conf, save = T)
+plotSitesCovBy10(qcsumm, conf, share = F, save = T)
+plotSitesCovBy10CpGnonCpG(qcsumm, conf, share = F, save = T)
+
+methData <- readMethData(conf)
+plotSingleMethStats(methData[[1]])
+plotSingleMethStats(methData[[3]])
+
+plotMethStats(methData, conf, save = T)
+plotMethStatsSummary(methData, conf, save = T)
+plotMethLevels(methData, conf, share = T, save = F)

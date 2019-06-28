@@ -3,6 +3,10 @@ library("rjson")
 library("tools")
 library("data.table")
 library("ggplot2")
+library("RColorBrewer")
+library("methylKit")
+library("GenomicRanges")
+library("genomation")
 
 source("./R/utils.R")
 source("./R/mainQC.R")
@@ -10,7 +14,7 @@ source("./R/mainQC.R")
 #########################################
 CytoMethInfo <- function(){
   cat("#######################################\n")
-  cat("### CytoMeth ver 0.9.6 (28-05-2019) ###\n")
+  cat("### CytoMeth ver 0.9.8 (27-06-2019) ###\n")
   cat("#######################################\n")
   cat("### Created by Michal Draminski, Agata Dziedzic, Rafal Guzik, Bartosz Wojtas and Michal J. Dabrowski ###\n")
   cat("### Computational Biology Lab, Polish Academy of Science, Warsaw, Poland ###\n")
@@ -70,7 +74,7 @@ CytoMeth <- function(config, file_r1 = NULL, file_r2 = NULL){
 #########################################
 # CytoMethSingleSample
 #########################################
-#config <- conf; file_r1 <-"/home/mdraminski/workspace/CytoMeth/input/small_FAKE02_R1.fastq"; file_r2 <- "/home/mdraminski/workspace/CytoMeth/input/small_FAKE02_R2.fastq";
+#config <- conf; file_r1 <-"/home/mdraminski/workspace/CytoMeth/input/small_FAKE03_R1.fastq"; file_r2 <- "/home/mdraminski/workspace/CytoMeth/input/small_FAKE03_R2.fastq";
 CytoMethSingleSample <- function(config, file_r1, file_r2){
   #show vignette
   CytoMethInfo()
@@ -100,16 +104,63 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     print(paste0("Error! Input files does not contain required 'R1' or 'R2' signature. Files 'fastq' are expected."))
     return(F)
   }else{
-    basename_r1 <- trimws( substr( basename(file_r1), 1, nchar(basename(file_r1)) - nchar(".fastq")) )
-    basename_r2 <- trimws( substr( basename(file_r2), 1, nchar(basename(file_r2)) - nchar(".fastq")) )
+    basename_r1 <- trimws(substr(basename(file_r1), 1, nchar(basename(file_r1)) - nchar(".fastq")) )
+    basename_r2 <- trimws(substr(basename(file_r2), 1, nchar(basename(file_r2)) - nchar(".fastq")) )
     
     #define current sample name
-    sample_basename <- substr( basename_r1, 1, nchar(basename_r1) - nchar("_R1"))
+    sample_basename <- substr(basename_r1, 1, nchar(basename_r1) - nchar("_R1"))
     
     cat('#############################################\n')
     cat(paste0("Processing the sample - ", sample_basename, "\n"))
     cat('#############################################\n')
     
+    ####################
+    ######  seqtk ######
+    if(!config$sqtk_omit){
+      seqtk_r1_file <- paste0(file.path(config$results_path, config_tools[config_tools$proces=="seqtk","temp_results_dirs"], sample_basename),"_R1.fastq")
+      seqtk_r2_file <- paste0(file.path(config$results_path, config_tools[config_tools$proces=="seqtk","temp_results_dirs"], sample_basename),"_R2.fastq")
+      
+      if(config$overwrite_results | !(file.exists(seqtk_r1_file) &
+                                      file.exists(seqtk_r2_file))){
+        
+        src_command <- paste0(file.path(config$anaconda_bin_path, config$seqtk), " sample -s 10000 ", file_r1, " ", config$sqtk_subset, " > ", seqtk_r1_file)
+        runSystemCommand(myAppName, 'seqtk', 'subsample of reads R1', src_command, config$verbose)
+        
+        src_command <- paste0(file.path(config$anaconda_bin_path, config$seqtk), " sample -s 10000 ", file_r2, " ", config$sqtk_subset, " > ", seqtk_r2_file)
+        runSystemCommand(myAppName, 'seqtk', 'subsample of reads R2', src_command, config$verbose)
+      }else{
+        skipProcess(myAppName, 'seqtk', 'subsample of reads',
+                    file.path(config$results_path, config_tools[config_tools$proces=="seqtk","temp_results_dirs"],"/"))
+      }  
+      if(!checkIfFileExists(seqtk_r1_file)) return(F)
+      if(!checkIfFileExists(seqtk_r2_file)) return(F)
+      file_r1 <- seqtk_r1_file
+      file_r2 <- seqtk_r2_file
+    }
+    
+    #####################
+    ######  fastqc ######
+    fastqc_result_dir <- file.path(config$results_path, config_tools[config_tools$tool=="fastqc","temp_results_dirs"])
+    fastqc_result_r1_file <- file.path(fastqc_result_dir, paste0(basename_r1,"_fastqc.html"))
+    fastqc_result_r2_file <- file.path(fastqc_result_dir, paste0(basename_r2,"_fastqc.html"))
+    
+    if(config$overwrite_results | !(file.exists(fastqc_result_r1_file) &
+                                    file.exists(fastqc_result_r2_file))){
+      # src_command <- paste0(file.path(config$anaconda_bin_path, config$fastqc), " --nogroup ", 
+      #                       seqtk_result_file,"_subset_R1.fastq ",
+      #                       seqtk_result_file,"_subset_R2.fastq", 
+      #                       " --outdir ", fastqc_result_dir)
+    
+      src_command <- paste0(file.path(config$anaconda_bin_path, config$fastqc), " --nogroup ", 
+                            file_r1, " ", file_r2, 
+                            " --outdir ", fastqc_result_dir)
+      runSystemCommand(myAppName, 'fastqc', 'FastQC Report generation', src_command, config$verbose)
+    }else{
+      skipProcess(myAppName, 'Trimmomatic', 'trimming', fastqc_result_dir)
+    }
+    if(!checkIfFileExists(fastqc_result_r1_file)) return(F)
+    if(!checkIfFileExists(fastqc_result_r2_file)) return(F)
+
     ###############################
     ######  trimmomatic ######
     trimming_result_r1_file <- file.path(config$results_path, config_tools[config_tools$proces=="trimming","temp_results_dirs"], basename_r1)
@@ -126,9 +177,10 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " PE -threads ",config$threads," -phred33 ",file_r1," ", file_r2," ",
                             trimming_result_r1_file,"_trimmed.fq ", trimming_result_r1_file,"_unpaired.fq ",
                             trimming_result_r2_file,"_trimmed.fq ", trimming_result_r2_file,"_unpaired.fq ",
-                            "ILLUMINACLIP:", file.path(config$tools_path, config$trimmomatic_adapter),":2:30:10 LEADING:20 TRAILING:20 SLIDINGWINDOW:5:20 MINLEN:50",
+                            "ILLUMINACLIP:", file.path(config$tools_path, config$trimmomatic_adapter),
+                            ":2:30:10 LEADING:20 TRAILING:20 SLIDINGWINDOW:5:20 MINLEN:",config$trimmomatic_MINLEN,
                             " 2> ",trimmomatic_out_logfile)
-      runSystemCommand(myAppName, 'Trimmomatic', 'trimming', src_command)
+      runSystemCommand(myAppName, 'Trimmomatic', 'trimming', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Trimmomatic', 'trimming',
                    file.path(config$results_path, config_tools[config_tools$proces=="trimming","temp_results_dirs"],"/"))
@@ -165,7 +217,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -b ", trimming_result_r2_file,"_trimmed.fq",
                             " -d ", file.path(config$ref_data_path, config$reference_sequence_file),
                             " -p ", min(config$threads, 8)," -o ", paste0(mapping_result_file, ".sam"))
-      runSystemCommand(myAppName, 'BSMAP', 'mapping', src_command)
+      runSystemCommand(myAppName, 'BSMAP', 'mapping', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'BSMAP', 'mapping', mapping_dir)
     }
@@ -182,8 +234,9 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -VALIDATION_STRINGENCY LENIENT ",
                             " -INPUT ", paste0(mapping_result_file, ".sam"),
                             " -OUTPUT ", paste0(mapping_result_file, ".bam"),
+                            " -CREATE_INDEX true",
                             " -RGID SAMPLE -RGLB SAMPLE -RGPL illumina -RGSM SAMPLE -RGPU platform_unit")
-      runSystemCommand(myAppName, 'Picard', 'AddOrReplaceReadGroups', src_command)
+      runSystemCommand(myAppName, 'Picard', 'AddOrReplaceReadGroups', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Picard', 'AddOrReplaceReadGroups', mapping_dir)
     }
@@ -195,7 +248,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".TAG_ZS_+-.bam")))) {
       src_command <- paste0(file.path(config$anaconda_bin_path, config$bamtools), " split -tag ZS",
                             " -in ",paste0(mapping_result_file,".bam"))
-      runSystemCommand(myAppName, 'Bamtools', 'split', src_command)
+      runSystemCommand(myAppName, 'Bamtools', 'split', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Bamtools', 'split', mapping_dir)
     }
@@ -209,7 +262,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -in ", paste0(mapping_result_file,".TAG_ZS_++.bam"),
                             " -in ", paste0(mapping_result_file,".TAG_ZS_+-.bam"),
                             " -out ", paste0(mapping_result_file,".top.bam"))
-      runSystemCommand(myAppName, 'Bamtools', 'merge top', src_command)
+      runSystemCommand(myAppName, 'Bamtools', 'merge top', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Bamtools', 'merge top', mapping_dir)
     }
@@ -223,7 +276,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -in ", paste0(mapping_result_file,".TAG_ZS_-+.bam"),
                             " -in ", paste0(mapping_result_file,".TAG_ZS_--.bam"),
                             " -out ", paste0(mapping_result_file,".bottom.bam"))
-      runSystemCommand(myAppName, 'Bamtools', 'merge bottom', src_command)
+      runSystemCommand(myAppName, 'Bamtools', 'merge bottom', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Bamtools', 'merge bottom', mapping_dir)
     }
@@ -236,7 +289,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
       src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " sort",
                             " -in ", paste0(mapping_result_file,".top.bam"), 
                             " -out ", paste0(mapping_result_file,".top.bam.sorted"))
-      runSystemCommand(myAppName, 'Bamtools', 'sort top', src_command)
+      runSystemCommand(myAppName, 'Bamtools', 'sort top', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Bamtools', 'sort top', mapping_dir)
     }
@@ -249,7 +302,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
       src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " sort ",
                             " -in ", paste0(mapping_result_file,".bottom.bam"), 
                             " -out ", paste0(mapping_result_file,".bottom.bam.sorted"))
-      runSystemCommand(myAppName, 'Bamtools', 'sort bottom', src_command)
+      runSystemCommand(myAppName, 'Bamtools', 'sort bottom', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Bamtools', 'sort bottom', mapping_dir)
     }
@@ -277,7 +330,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -METRICS_FILE ",paste0(rmdups_result_file,".top.rmdups_metrics.txt"),
                             " -REMOVE_DUPLICATES true -ASSUME_SORTED true -CREATE_INDEX true", 
                             " 2> ", rmdups_result_top_logfile)
-      runSystemCommand(myAppName, 'Picard', 'MarkDuplicates - top', src_command)
+      runSystemCommand(myAppName, 'Picard', 'MarkDuplicates - top', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Picard', 'MarkDuplicates - top', rmdups_dir)
     }
@@ -305,7 +358,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -METRICS_FILE ",paste0(rmdups_result_file,".bottom.rmdups_metrics.txt"),
                             " -REMOVE_DUPLICATES true -ASSUME_SORTED true -CREATE_INDEX true", 
                             " 2> ", rmdups_result_bottom_logfile)
-      runSystemCommand(myAppName, 'Picard', 'MarkDuplicates - bottom', src_command)
+      runSystemCommand(myAppName, 'Picard', 'MarkDuplicates - bottom', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Picard', 'MarkDuplicates - bottom',
                    file.path(config$results_path, config_tools[config_tools$proces=="mark_duplicates_bottom","temp_results_dirs"],"/"))
@@ -332,7 +385,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -in ", paste0(rmdups_result_file,".top.rmdups.bam"),
                             " -in ", paste0(rmdups_result_file,".bottom.rmdups.bam"),
                             " -out ", paste0(rmdups_result_file,".rmdups.bam"))
-      runSystemCommand(myAppName, 'Bamtools', 'merge', src_command)
+      runSystemCommand(myAppName, 'Bamtools', 'merge', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Bamtools', 'merge',
                    file.path(config$results_path, config_tools[config_tools$proces=="merge2_bam","temp_results_dirs"],"/"))
@@ -348,7 +401,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
       src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " filter -isMapped true -isPaired true -isProperPair true -forceCompression",
                             " -in ", paste0(rmdups_result_file,".rmdups.bam"), 
                             " -out ", paste0(filtered_result_file,".filtered.bam"))
-      runSystemCommand(myAppName, 'Bamtools', 'filter', src_command)
+      runSystemCommand(myAppName, 'Bamtools', 'filter', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Bamtools', 'filter',
                    file.path(config$results_path, config_tools[config_tools$proces=="filter_bam","temp_results_dirs"],"/"))
@@ -364,7 +417,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
       src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools), " flagstat ",  
                             paste0(filtered_result_file,".filtered.bam"), 
                             " 1> ", flagstat_result_file)
-      runSystemCommand(myAppName, 'Samtools', 'flagstat', src_command)
+      runSystemCommand(myAppName, 'Samtools', 'flagstat', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Samtools', 'flagstat', file.path(config$results_path,"logs","/"))
     }
@@ -380,7 +433,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " --in ",  paste0(filtered_result_file,".filtered.bam"),
                             " --out ", paste0(clipping_result_file,".clipped.bam"), 
                             " 2> ", file.path(file.path(config$results_path,"logs"),paste0(sample_basename,"_",config_tools[config_tools$process=="clip_overlap","logfile"])))
-      runSystemCommand(myAppName, 'BamUtil', 'clipOverlap', src_command)
+      runSystemCommand(myAppName, 'BamUtil', 'clipOverlap', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'BamUtil', 'clipOverlap',
                    file.path(config$results_path, config_tools[config_tools$proces=="clip_overlap","temp_results_dirs"],"/"))
@@ -392,7 +445,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     #samtools - index
     if(config$overwrite_results | !(file.exists(paste0(clipping_result_file,".clipped.bam.bai")))) {
       src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools), " index ", paste0(clipping_result_file,".clipped.bam"))
-      runSystemCommand(myAppName, 'Samtools', 'index', src_command)
+      runSystemCommand(myAppName, 'Samtools', 'index', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Samtools', 'index',
                    file.path(config$results_path, config_tools[config_tools$proces=="clip_overlap","temp_results_dirs"],"/"))
@@ -414,7 +467,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -INPUT ", paste0(rmdups_result_file,".rmdups.bam"), 
                             " -OUTPUT ", paste0(basic_mapping_metrics_result_file,"_basic_mapping_metrics.txt"),
                             " -REFERENCE_SEQUENCE ", file.path(config$ref_data_path, config$reference_sequence_file))
-      runSystemCommand(myAppName, 'Picard', 'Basic Mapping Metrics', src_command)
+      runSystemCommand(myAppName, 'Picard', 'Basic Mapping Metrics', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Picard', 'Basic Mapping Metrics',
                    file.path(config$results_path, config_tools[config_tools$proces=="basic_mapping_metrics","temp_results_dirs"],"/"))
@@ -446,7 +499,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -Histogram_FILE ", paste0(insert_size_result_file,"_insert_size_plot.pdf"),
                             " -INPUT ", paste0(filtered_result_file,".filtered.bam"),
                             " -OUTPUT ", paste0(insert_size_result_file,"_insert_size_metrics.txt"))
-      runSystemCommand(myAppName, 'Picard', 'Insert Size', src_command)
+      runSystemCommand(myAppName, 'Picard', 'Insert Size', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Picard', 'Insert Size',
                    file.path(config$results_path, config_tools[config_tools$proces=="insert_size","temp_results_dirs"],"/"))
@@ -463,7 +516,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " intersect -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"), 
                             " -b ", file.path(config$ref_data_path, config$intervals_file), 
                             " > ",paste0(on_target_result_file, "_on_target_reads"))
-      runSystemCommand(myAppName, 'BEDTools', 'Intersect on_target_reads', src_command)
+      runSystemCommand(myAppName, 'BEDTools', 'Intersect on_target_reads', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'BEDTools', 'Intersect on_target_reads',
                    file.path(config$results_path, config_tools[config_tools$proces=="on_target_reads","temp_results_dirs"],"/"))
@@ -492,7 +545,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -L ", file.path(config$ref_data_path, config$intervals_file),
                             " -ct 1 -ct 10 -ct 20", 
                             " > ", gatk_depth_logfile)
-      runSystemCommand(myAppName, 'GATK', 'depth_of_coverage', src_command)
+      runSystemCommand(myAppName, 'GATK', 'depth_of_coverage', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'GATK', 'depth_of_coverage',
                    file.path(config$results_path, config_tools[config_tools$proces=="depth_of_coverage","temp_results_dirs"],"/"))
@@ -524,7 +577,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -m 1 -z -i skip", 
                             " -o ", paste0(methyl_result_file,".methylation_results.txt")," ", paste0(clipping_result_file,".clipped.bam"),
                             " 2> ", methratio_logfile)
-      runSystemCommand(myAppName, 'BSMAP', 'methratio', src_command)
+      runSystemCommand(myAppName, 'BSMAP', 'methratio', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'BSMAP', 'methratio',
                    file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"],"/"))
@@ -564,7 +617,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " intersect -bed -abam ",  paste0(methyl_result_file,".methylation_results.bed"), 
                             " -b ",file.path(config$ref_data_path, config$intervals_file),
                             " -u > ",paste0(methyl_result_file,".methylation_results.bed.panel"))
-      runSystemCommand(myAppName, 'BEDTools', 'intersect - capture region', src_command)
+      runSystemCommand(myAppName, 'BEDTools', 'intersect - capture region', src_command, config$verbose)
       
     }else{
       skipProcess(myAppName, 'BEDTools', 'intersect - capture region',

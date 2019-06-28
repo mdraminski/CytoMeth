@@ -161,9 +161,11 @@ skipProcess <- function(app_name, process_name, subprocess_name, dir_name){
 #########################################
 # runSystemCommand
 #########################################
-runSystemCommand <- function(app_name, process_name, subprocess_name, command){
+runSystemCommand <- function(app_name, process_name, subprocess_name, command, verbose = FALSE){
   cat(paste0(app_name, ": Running ", process_name, " - '", subprocess_name, "'...\n"))
   start_time <- Sys.time()
+  if(verbose)
+    cat(paste0(command,"\n"))
   system(command)
   stop_time <- Sys.time()
   cat(paste0(app_name, ": Process ",process_name," - '",subprocess_name,"' is finished. [", format(stop_time - start_time, digits=3) ,"]\n"))
@@ -193,4 +195,53 @@ qc2dataframe <- function(qc_report){
   df <- t(as.data.frame(qc_report))
   df <- data.frame(metric = row.names(df), value = as.character(df[,1]))
   return(df)
+}
+
+#########################################
+# getVersionR
+#########################################
+getRVer <- function(){
+  rver <- as.numeric(paste0(R.version$major,".",unlist(strsplit(R.version$minor,"\\."))[1]))
+  return(rver)
+}
+
+###############################
+#file.ext
+###############################
+fileExt <- function(x){
+  ext <- unlist(strsplit(basename(x), '[.]'))
+  if(length(ext) > 1)
+    ext <- tolower(tail(ext, 1))
+  else
+    ext <- ''
+  return (ext)
+}
+###############################
+#open.plot.file
+###############################
+openPlotFile <- function(filename, width = 10, height = 6, res = 72)
+{
+  dev.flush()
+  ext <- fileExt(filename)
+  if (ext == "png") {
+    png(filename, width=width, height = height, units = 'in', res = 72)
+  } else if (ext == "jpg") {
+    # jpg size is set by default
+    jpeg(filename, width = width, height = height, units = 'in', res = 72)
+  } else if (ext == "pdf") {
+    # pdf size is set by default
+    pdf(filename, width = width, height = height)
+  } else if (ext == "svg") {
+    # svg size is set by default
+    svg(filename, width = width, height = height)
+  } else if (ext == "ps") {
+    # ps size is set by default
+    postscript(filename, width = width, height = height)
+  } else if (ext == "wmf") {
+    # wmf size is set by default
+    win.metafile(filename, width = width, height = height)
+  } else{ # pdf by default
+    pdf(filename, width = width, height = height)
+  }
+  return(T)
 }

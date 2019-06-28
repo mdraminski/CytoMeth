@@ -36,7 +36,7 @@ If you dont have R or Rscript please install them. If missing R:
 ```bash
 sudo apt install r-base
 ```
-If missing Rscript only:
+If still missing Rscript try to install:
 ```bash
 sudo apt-get install littler
 ```
@@ -52,7 +52,7 @@ wget https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
 ```
 Install it in the following directory: '*/opt/anaconda*' and remove the installation file.
 ```bash
-bash Anaconda3-2019.03-Linux-x86_64.sh -b -p /opt/anaconda
+sudo bash Anaconda3-2019.03-Linux-x86_64.sh -b -p /opt/anaconda
 rm Anaconda3-2019.03-Linux-x86_64.sh 
 ```
 Create new users group 'anaconda' and give all required priviliges to that group.
@@ -84,7 +84,7 @@ python2 --version
 If your OS lacks of python 2.x please install it with the following commnads:
 ```bash
 sudo apt-get update
-sudo apt-get install python2  
+sudo apt-get install python2
 ```
 
 ### Java
@@ -111,10 +111,14 @@ run the '*install.sh*' script located in CytoMeth directory. For the first time 
 #### Required R packages
 The script '*install.sh*' file should install the following *R* packages:
 
-- yaml
-- tools
-- data.table
-- rjson
+- data.table (CRAN package)
+- ggplot2 (CRAN package)
+- rjson (CRAN package)
+- RColorBrewer (CRAN package)
+- yaml (CRAN package)
+- methylKit (Bioconductor package)
+- GenomicRanges (Bioconductor package)
+- genomation (Bioconductor package)
 
 These packages can be also manually installed by typing the command in the console window:
 ```bash
@@ -128,6 +132,8 @@ The follwing *conda* packages are required by CytoMeth and these packages are au
 - bamtools (ver. 2.5.1)
 - bamutil (ver. 1.0.14)
 - bedtools (ver. 2.27)
+- seqtk (ver. 1.3)
+- fastqc (ver. 0.11.8)
 - samtools (ver. 1.9)
 
 These tools can be also manually installed by typing the command in the console window:
@@ -137,6 +143,8 @@ conda install -y -c bioconda bsmap
 conda install -y -c bioconda bamtools
 conda install -y -c bioconda bamutil
 conda install -y -c bioconda bedtools
+conda install -y -c bioconda seqtk
+conda install -y -c bioconda fastqc
 conda install -y -c bioconda samtools
 ```
 
@@ -213,6 +221,11 @@ Input parameters:
 Before you run the processing you need to: 
 
 - Copy your nucleotide sequences FASTA R1/R2 files (both in *.fastq* format) named: '*samplename\_R1.fastq*' and '*samplename\_R2.fastq*' (where *samplename* is a unique name of your sequenced sample) to the '*./input/*' directory. 
+- If your files are compressed (*.gz* format) please decompress before use:
+```bash
+gunzip - c SAMPLENAME_R1.fastq.gz > SAMPLENAME_R1.fastq
+gunzip - c SAMPLENAME_R2.fastq.gz > SAMPLENAME_R2.fastq
+```
 - Prepare reference FASTA (in .fa or .fasta format) file with additional control sequence. CytoMeth comes with 'hg38_phage.fa' reference file with an additional sequence used as control (phage DNA sequence) and the file 'hg38.fa' without that additional seqence. Any new reference '.fa' file requires corresponding '.fai' and '.dict' files that should be generated.
 - Prepare panel file (in .bed format) with panel coordinates and control coordinates 'SeqCap\_EPI\_CpGiant\_hg38\_custom\_liftOver.bed''.
 
@@ -243,9 +256,9 @@ Rscript CytoMethAnnotate.R
 ## Output files
 The result files are located in *'/results/methyl_results'* directory:
 
-- '*samplename.methylation_results.bed.panel*'
-- '*samplename.methylation_results.bed.panel.no_control.CpG_min10*'
-- '*samplename.methylation_results.bed.panel.no_control.non_CpG_min10*'
+- '*SAMPLENAME.methylation_results.bed.panel*'
+- '*SAMPLENAME.methylation_results.bed.panel.no_control.CpG_min10*'
+- '*SAMPLENAME.methylation_results.bed.panel.no_control.non_CpG_min10*'
 
 After the processing of each single sample CytoMeth creates a summary file associated with that sample. The default location for this summary file is '*results/QC_report*'. Example of that file for is below (created for fake data):
 
@@ -279,13 +292,13 @@ This tool has been created and implemented by:
 
 - Michal Draminski [1] (author, developer, maintainer)
 - Agata Dziedzic [1] (author, developer)
-- Rafal Guzik (author)
+- Rafal Guzik [3] (author)
 - Bartosz Wojtas [2] (author)
 - Michal J. Dabrowski [1] (author)
 
 1. Computational Biology Lab, Polish Academy of Science, Warsaw, Poland
 2. Neurobiology Center, Nencki Institute of Experimental Biology, Warsaw, Poland
-
+3. Andrzej Frycz Modrzewski Krakow University, Faculty of Medicine and Health Sciences, Department of Biochemistry, Poland.
 
 # License
 This program and the accompanying materials are made available under the terms of the GNU Public License v3.0 which accompanies this distribution, and is available at [http://www.gnu.org/licenses/gpl.html](http://www.gnu.org/licenses/gpl.html). For more information please see LICENSE file.
@@ -304,3 +317,6 @@ The set of tools, used by or provided with CytoMeth is under following licenses:
 - samtools - The MIT/Expat License https://github.com/samtools/htslib-plugins/blob/master/LICENSE
 
 # Acknowledgments
+
+- We would like to thank to everyone who helped and contributed to this work. 
+- This work is supported by a grant from the Polish National Science Centre [DEC-2015/16/W/NZ2/00314].

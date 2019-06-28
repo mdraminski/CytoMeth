@@ -1,5 +1,6 @@
 process,tool,temp_results_dirs,logfile
-fastqc,fastqc,QC/Fastqc,
+fastqc,fastqc,QC/FastQC,
+seqtk,seqtk,subsets,
 trimming,trimmomatic,trimmed,trimming.log
 mapping,bsmap,mapped,
 add_or_replace_read_groups,picard,mapped,
