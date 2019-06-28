@@ -31,8 +31,8 @@ while true; do
                 conda install -y -c bioconda bedtools;
                 conda install -y -c bioconda seqtk;
                 conda install -y -c bioconda fastqc;
-                conda install -y -c bioconda/label/cf201901 samtools;
-                #conda install -y -c bioconda -c r samtools --override-channels;
+                #conda install -y -c bioconda/label/cf201901 samtools;
+                conda install -y -c bioconda -c r samtools --override-channels;
                 break;;
         [Nn]* ) echo "Skipping installation"; break;;
         * ) echo "Please answer yes or no";;
@@ -42,6 +42,7 @@ done
 echo "#######################################"
 echo "Downloading of Required Reference Files"
 echo "#######################################"
+#zip -lv CytoMethRefData.zip ./RefData/*
 mkdir -p ./RefData/
 while true; do
     read -p "Do you wish to download required reference files? (y/n)" yn

@@ -245,12 +245,12 @@ After processing is finished create quality report on all results files located 
 ```bash
 Rscript R/CytoMethQC.R
 ```
-The script above creates summary csv file that aggregates quality measures values for all processed samples. It also creates two barplots: overall coverage report plot, CpG vs nonCpG frequency report.
+The script above creates summary csv file that aggregates quality measures values for all processed samples. It also creates two barplots: overall coverage report plot, CpG vs nonCpG frequency report. The methylation results can be also visualised in respect to specific genomic regions.
+We annotate the level of methylation to CpG islands, promoters, intergenic regions, introns and exons and provide proper plots in '*results/QC_report*' directory.
 
-The methylation results can be visualised in respect to specific genomic regions.
-We annotate the level of methylation to CpG islands, promoters, intergenic regions, introns and exons.
+You can run both phases by running '*CytoMeth.sh*' bash script in consone window.
 ```bash
-Rscript CytoMethAnnotate.R
+./CytoMeth.sh
 ```
 
 ## Output files

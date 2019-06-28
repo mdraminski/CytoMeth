@@ -122,7 +122,7 @@ plotMethStats <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save 
 }
 
 ####################################################
-###### Generate and save log10 Coverage boxplot for all samples
+###### PLOT: Generate and save log10 Coverage boxplot for all samples
 plotMethStatsSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T){
   
   sampleCov <- lapply(meth_data, function(x){
@@ -148,8 +148,8 @@ plotMethStatsSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2")
   return(gg)
 }
 
-########## create % info ###########
-### Methylation Levels
+####################################################
+### PLOT: Methylation Levels
 plotMethLevels <- function(meth_data, config, breaks = c(0,10,20,40,60,80,90,100), pal = brewer.pal(8, "Dark2"), share = F, save = T){
   
   percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage*100 } )
@@ -176,8 +176,7 @@ plotMethLevels <- function(meth_data, config, breaks = c(0,10,20,40,60,80,90,100
     gg <- gg + geom_bar(stat="identity")
   
   gg <- gg + theme_minimal() +
-    geom_bar(stat="identity", position="fill") + 
-    scale_fill_manual(values=pal) +
+    scale_fill_manual(values = pal) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     theme(legend.text=element_text(size=15)) + 
     theme(text = element_text(size=15)) + 
@@ -192,3 +191,108 @@ plotMethLevels <- function(meth_data, config, breaks = c(0,10,20,40,60,80,90,100
   
   return(gg)
 }
+
+####################################################
+###### PLOT: Hyper/Hypo CpG genom & islands annotation for each sample.
+#meth_data <- methData
+#config <- conf
+plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(20,80), config, pal = brewer.pal(8, "Dark2"), share = F, save = T){
+  
+  gene.obj <- readTranscriptFeatures(file.path(config$ref_data_path ,config$ref_data_gene_annotation_ens))
+  cpg.obj <- readFeatureFlank(file.path(config$ref_data_path ,config$ref_data_cpgIslandExt),feature.flank.name=c("CpGi","shores"))
+  percentage_meth <- lapply(meth_data, function(x){ x$numCs/x$coverage*100 } )
+  
+  meth_data_hypo <- list()
+  meth_data_hyper <- list()
+  
+  for (i in 1:(length(meth_data))){
+    meth_data_hypo[[meth_data[[i]]@sample.id]] <- meth_data[[i]][percentage_meth[[i]] < hypo_hyper_def[1]]
+    meth_data_hyper[[meth_data[[i]]@sample.id]] <- meth_data[[i]][percentage_meth[[i]] >= hypo_hyper_def[2]]
+  }
+  
+  plotList <- list(
+    plotCpGGenomAnnotation(meth_data_hyper, gene.obj, config, pal, subtitle = "Hypermethylated", share, save),
+    plotCpGGenomAnnotation(meth_data_hypo, gene.obj, config, pal, subtitle = "Hypomethylated", share, save),
+    plotCpGIslandsAnnotation(meth_data_hyper, cpg.obj, config, pal, subtitle = "Hypermethylated", share, save),
+    plotCpGIslandsAnnotation(meth_data_hypo, cpg.obj, config, pal, subtitle = "Hypomethylated", share, save))
+  return(plotList)
+}
+
+####################################################
+###### PLOT: Hyper/Hypo CpG genom annotation for each sample.
+plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T){
+  
+  annot_summary <- lapply(meth_data, function(x){ 
+    annot <- annotateWithGeneParts(as(x,"GRanges"), gene_annot_data) 
+    d <- data.frame(melt(t(getTargetAnnotationStats(annot, percentage=TRUE,precedence=F))))
+    d$Var1 <- x@sample.id
+    names(d) <- c("Sample_Id", "Gene_Part", "Frequency")
+    return(d)
+  })
+  
+  annot_summary <- rbindlist(annot_summary)
+  annot_summary <- annot_summary[order(annot_summary$Sample_Id),]
+  annot_summary$Sample_Id <- factor(annot_summary$Sample_Id, levels = sort(unique(annot_summary$Sample_Id)))
+  
+  gg <- ggplot(annot_summary, aes(fill=Gene_Part, y=Frequency, x=Sample_Id))
+  if(share){
+    gg <- gg + geom_bar(stat="identity", position="fill")
+  }else{
+    gg <- gg + geom_bar(stat="identity")
+  }
+  gg <- gg + theme_minimal() +
+    scale_fill_manual(values = pal) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(legend.text=element_text(size=15)) + 
+    theme(text = element_text(size=15)) +
+    ggtitle(paste(subtitle,"CpG Genom Annotation")) +
+    xlab("Sample Id") + 
+    ylab("Frequency")
+  
+  if(save){
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("Summary",subtitle,"CpGGenomAnnotation.",config$plot_format)), plot=gg, device = config$plot_format)
+  }
+  
+  return(gg)
+}
+
+####################################################
+###### PLOT: Hyper/Hypo CpG islands annotation for each sample.
+plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T){
+  
+  annot_summary <- lapply(meth_data, function(x){ 
+    annot <- annotateWithFeatureFlank(as(x,"GRanges"), cpg_annot_data$CpGi, cpg_annot_data$shores, feature.name="CpGi", flank.name="shores")
+    d <- data.frame(melt(t(getTargetAnnotationStats(annot, percentage=TRUE,precedence=F))))
+    d$Var1 <- x@sample.id
+    names(d) <- c("Sample_Id", "Region", "Frequency")
+    return(d)
+  })
+  
+  annot_summary <- rbindlist(annot_summary)
+  annot_summary <- annot_summary[order(annot_summary$Sample_Id),]
+  annot_summary$Sample_Id <- factor(annot_summary$Sample_Id, levels = sort(unique(annot_summary$Sample_Id)))
+  
+  gg <- ggplot(annot_summary, aes(fill=Region, y=Frequency, x=Sample_Id))
+  if(share){
+    gg <- gg + geom_bar(stat="identity", position="fill")
+  }else{
+    gg <- gg + geom_bar(stat="identity")
+  }
+  gg <- gg + theme_minimal() +
+    scale_fill_manual(values = pal) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(legend.text=element_text(size=15)) + 
+    theme(text = element_text(size=15)) +
+    ggtitle(paste(subtitle,"CpG Islands Annotation")) +
+    xlab("Sample Id") + 
+    ylab("Frequency")
+  
+  if(save){
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("Summary",subtitle,"CpGIslandsAnnotation.",config$plot_format)), plot=gg, device = config$plot_format)
+  }
+  
+  return(gg)
+}
+
+
+
