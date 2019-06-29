@@ -12,10 +12,10 @@ results_path: "./results/"
 #anaconda_bin_path: "/opt/anaconda/bin/"
 
 ### Reference Data Definition
-reference_sequence_file: "hg38_phage.fa"
-intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
+ref_data_sequence_file: "hg38_phage.fa"
+ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
 
 # Specific Tools params
 trimmomatic_MINLEN: 50
-sqtk_omit: TRUE
+sqtk_run: FALSE
 sqtk_subset: 10000000

@@ -21,7 +21,8 @@ python2: "python2"
 
 ### Reference Data - Path
 ref_data_path: "./RefData/"
-trimmomatic_adapter: "Trimmomatic/adapters/TruSeq3-PE-2.fa"
-ref_data_cpgIslandExt: "cpgIslandExt.hg38.bed"
-ref_data_gene_annotation_ens: "gene.annotation.ensemble.hg38.bed"
+
+ref_data_trimmomatic_adapter: "Trimmomatic/adapters/TruSeq3-PE-2.fa"
+ref_data_CpgIslandAnnotation: "cpgIslandExt.hg38.bed"
+ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
 

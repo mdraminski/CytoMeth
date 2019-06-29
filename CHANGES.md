@@ -4,8 +4,9 @@ CytoMeth - Changes
 ## Version 0.9.8
 * README updated
 * QC extended
-* install packages extended by bioconductor packages
+* install.packages.R extended by bioconductor packages
 * Dockerfile added
+* install.data.sh added
 
 ## Version 0.9.7
 * README updated

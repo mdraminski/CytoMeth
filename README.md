@@ -102,9 +102,10 @@ sudo apt-get install openjdk-8-jre-headless
 
 ### Installation script
 To install or update all required *R* and conda packages, download required reference files and set up CytoMeth,
-run the '*install.sh*' script located in CytoMeth directory. For the first time select '*y*' option to install all required by CytoMeth components. All required packages and files should be installed or updated automatically and if that succeeded there is no need of any manual installation presented later below. If there is any missing component and CytoMeth stops with appropriate warning you may take a look at a specific section 'Required Tools' or 'Reference Files'. In that case please also try to rerun the script in the console window. Please notice that size of reference files is several GB and it can take a few minutes, however the downloading time strongly depends on your internet connection speed.
+run '*install.sh*' and '*install.data.sh*' scripts both located in CytoMeth directory. The first one installs all required R and conda packages and the second one downloads all required reference files and basic example data. For the first time select '*y*' option to install all required by CytoMeth components. All required packages and files should be installed or updated automatically and if that succeeded there is no need of any manual installation presented later below. If there is any missing component and CytoMeth stops with appropriate warning you may take a look at a specific section 'Required Tools' or 'Reference Files'. In that case please also try to rerun the script in the console window. Please notice that size of reference files is several GB and it can take a few minutes to download them, however the downloading time strongly depends on your internet connection speed.
 ```bash
 ./install.sh
+./install.data.sh
 ```
 
 ### Required Tools
@@ -149,7 +150,7 @@ conda install -y -c bioconda samtools
 ```
 
 #### Required Java Tools
-Java tools (in CytoMeth '*/tools/*' directory) are provided with CytoMeth in the following versions:
+Java tools (in CytoMeth '*/tools/*' directory) are provided with CytoMeth with the following versions:
 
 - Trimmomatic (ver. 0.36)
 - GATK (ver. 3.8.1)
@@ -167,16 +168,22 @@ This file is also created during installation process.
 Reference files required by CytoMeth are automatically installed by '*install.sh*' script. If you would like to download them manually plese run the following commands in console window:
 
 ```bash
-wget -c -O ./RefData/hg38.fa http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38.fa
-wget -c -O ./RefData/hg38.fa.fai http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38.fa.fai
-wget -c -O ./RefData/hg38.fa.dict http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38.dict
-wget -c -O ./RefData/hg38_phage.fa http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38_phage.fa
-wget -c -O ./RefData/hg38_phage.fa.fai http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38_phage.fa.fai
-wget -c -O ./RefData/hg38_phage.dict http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/hg38_phage.dict
-wget -c -O ./RefData/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed
+wget -c -O ./RefData/CytoMethRefData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/CytoMethRefData.zip;
+unzip ./RefData/CytoMethRefData.zip;
 ```
-All reference files by default are located in */RefData/* directory.
+All reference files are located in */RefData/* directory by default.
 
+## The Docker
+CytoMeth project is also available as a docker. To build your own docker use *build* command and after the successful creation the docker is ready to run. Pleaese notice building of the docker may take tens of minutes because the proper environment must be created from the scratch, however it must be done only once.
+```bash
+docker build -t cytometh .
+docker run -it cytometh /bin/bash
+```
+
+Reference data is several Gigabytes big therefore it is not included in the parent docker. However you can download it by running '*install.data.sh*' script in the command window. 
+```bash
+./install.data.sh
+```
 
 # Usage
 
@@ -204,7 +211,8 @@ trimmomatic_adapter: "Trimmomatic-0.36/adapters/TruSeq3-PE-2.fa"
 
 Input parameters: 
 
-- threads - define number of threads used by tools. Most of them does not gain any processing speed for more than around 10 threads.
+- threads - prints additional info and commands on the screen
+- threads - defines number of threads used by tools. Most of the tools does not gain any processing speed for more than 10-12  threads.
 - java_mem - amount of memory dedicated to Java tools. If you face Java 'out of memory' error please increase the parameter.
 - overwrite_results - if TRUE then all result files from the sample processed again will be overwritten. If FALSE CytoMeth will skip phases that related phase result file exists in apriopriate results_path.
 - clean_tmp_files - if TRUE all useless temporary files will be removed after the processing of the sample.
@@ -212,9 +220,11 @@ Input parameters:
 - input_path - defines path to input fastq R1/R2 files, all samples existing in this directory will be processed in batch process.
 - results_path - the path to keep all temporary and result files.
 - anaconda_bin_path - path to conda and conda packages. This parameter is retrieved from 'conda.info' file and it is commented out by default. If you want to specify specific path to conda/bin directory uncommend it and define. This parameter overwrites the setting from 'conda.info' file.
-- reference_sequence_file - additional control sequence file (see Input files section) by default it is set on 'hg38_phage.fa'.
-- intervals_file - panel file (see Input files section)  by default it is set on SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed'
-- trimmomatic_adapter - trimmomatic adapter file (see Input files section) by default it is set on 'Trimmomatic-0.36/adapters/TruSeq3-PE-2.fa'
+- ref_data_sequence_file - additional control sequence file (see Input files section) by default it is set on 'hg38_phage.fa'.
+- ref_data_intervals_file - panel file (see Input files section)  by default it is set on SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed'
+- trimmomatic_MINLEN - MINLEN parameter of the trimmomatic tool.
+- sqtk_run - if TRUE initial sqtk sampling is processed.
+- sqtk_subset - size of the subset to select by the sqtk tool.
 
 ## Input files
 

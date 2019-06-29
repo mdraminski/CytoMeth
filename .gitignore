@@ -36,10 +36,10 @@ vignettes/*.pdf
 rsconnect/
 
 #CytoMeth RefData and input files
-/RefData/
 /input/
-/useless/
+/RefData/
 /results/
 
 conda.info
-.Rproj.user
+*.Rproj
+TODO

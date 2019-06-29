@@ -42,7 +42,7 @@ plotSitesCovBy10 <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), s
     ggtitle("Number of sites in CpG context covered by more/less than 10.")
   
   if(save){
-    ggsave(filename = file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy10.",config$plot_format)), plot = gg, device = config$plot_format)
+    ggsave(filename = file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy10.",config$plot_format)), plot = gg, device=config$plot_format)
   }
   
   return(gg)
@@ -71,7 +71,7 @@ plotSitesCovBy10CpGnonCpG <- function(qc_summary, config, pal = brewer.pal(8, "D
     xlab("Sample ID") +
     ggtitle("Number of sites covered by minimum 10 reads \nseparately for sites in CpG and non-CpG context.")
   if(save){
-    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy10CpGnonCpG.",config$plot_format)), plot=gg, device = config$plot_format)
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy10CpGnonCpG.",config$plot_format)), plot=gg, device=config$plot_format)
   }
   
   return(gg)
@@ -198,8 +198,8 @@ plotMethLevels <- function(meth_data, config, breaks = c(0,10,20,40,60,80,90,100
 #config <- conf
 plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(20,80), config, pal = brewer.pal(8, "Dark2"), share = F, save = T){
   
-  gene.obj <- readTranscriptFeatures(file.path(config$ref_data_path ,config$ref_data_gene_annotation_ens))
-  cpg.obj <- readFeatureFlank(file.path(config$ref_data_path ,config$ref_data_cpgIslandExt),feature.flank.name=c("CpGi","shores"))
+  cpg.gene <- readTranscriptFeatures(file.path(config$ref_data_path, config$ref_data_CpGGenomAnnotation))
+  cpg.island <- readFeatureFlank(file.path(config$ref_data_path, config$ref_data_CpgIslandAnnotation), feature.flank.name=c("CpGi","shores"))
   percentage_meth <- lapply(meth_data, function(x){ x$numCs/x$coverage*100 } )
   
   meth_data_hypo <- list()
@@ -211,10 +211,10 @@ plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(20,80), config, pal 
   }
   
   plotList <- list(
-    plotCpGGenomAnnotation(meth_data_hyper, gene.obj, config, pal, subtitle = "Hypermethylated", share, save),
-    plotCpGGenomAnnotation(meth_data_hypo, gene.obj, config, pal, subtitle = "Hypomethylated", share, save),
-    plotCpGIslandsAnnotation(meth_data_hyper, cpg.obj, config, pal, subtitle = "Hypermethylated", share, save),
-    plotCpGIslandsAnnotation(meth_data_hypo, cpg.obj, config, pal, subtitle = "Hypomethylated", share, save))
+    plotCpGGenomAnnotation(meth_data_hyper, cpg.gene, config, pal, subtitle = "Hypermethylated", share, save),
+    plotCpGGenomAnnotation(meth_data_hypo, cpg.gene, config, pal, subtitle = "Hypomethylated", share, save),
+    plotCpGIslandsAnnotation(meth_data_hyper, cpg.island, config, pal, subtitle = "Hypermethylated", share, save),
+    plotCpGIslandsAnnotation(meth_data_hypo, cpg.island, config, pal, subtitle = "Hypomethylated", share, save))
   return(plotList)
 }
 
@@ -250,7 +250,7 @@ plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = bre
     ylab("Frequency")
   
   if(save){
-    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("Summary",subtitle,"CpGGenomAnnotation.",config$plot_format)), plot=gg, device = config$plot_format)
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("Summary",subtitle,"CpGGenomAnnotation.",config$plot_format)), plot=gg, device=config$plot_format)
   }
   
   return(gg)
@@ -288,11 +288,35 @@ plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = br
     ylab("Frequency")
   
   if(save){
-    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("Summary",subtitle,"CpGIslandsAnnotation.",config$plot_format)), plot=gg, device = config$plot_format)
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("Summary",subtitle,"CpGIslandsAnnotation.",config$plot_format)), plot=gg, device=config$plot_format)
   }
   
   return(gg)
 }
 
-
+###################################################
+##### Number of Common CpG Shared Between Samples
+plotCntCommonCpG <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T){
+  
+  commonCpg <- lapply(meth_data, function(x){
+    data.frame(cpg = paste0(x$chr, "_", x$start))
+  })
+  commonCpg <- as.data.frame(table(rbindlist(commonCpg)))
+  
+  gg <- ggplot(commonCpg, aes(x=Freq)) + 
+    geom_bar(fill = pal[1]) +
+    theme_minimal() +
+    scale_x_continuous(breaks = round(seq(min(1), max(length(meth_data), by = 1),1))) +
+    theme(legend.text=element_text(size=15)) + 
+    theme(text = element_text(size=15)) + 
+    ggtitle("Common CpG Shared Between Samples") +
+    xlab("Number of samples") + 
+    ylab("Number of common CpG")
+  
+  if(save){
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("SummaryCntCommonCpG.",config$plot_format)), plot=gg, device=config$plot_format)
+  }
+  
+  return(gg)
+}
 

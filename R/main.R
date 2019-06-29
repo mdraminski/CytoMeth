@@ -116,7 +116,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     
     ####################
     ######  seqtk ######
-    if(!config$sqtk_omit){
+    if(config$sqtk_run){
       seqtk_r1_file <- paste0(file.path(config$results_path, config_tools[config_tools$proces=="seqtk","temp_results_dirs"], sample_basename),"_R1.fastq")
       seqtk_r2_file <- paste0(file.path(config$results_path, config_tools[config_tools$proces=="seqtk","temp_results_dirs"], sample_basename),"_R2.fastq")
       
@@ -177,7 +177,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " PE -threads ",config$threads," -phred33 ",file_r1," ", file_r2," ",
                             trimming_result_r1_file,"_trimmed.fq ", trimming_result_r1_file,"_unpaired.fq ",
                             trimming_result_r2_file,"_trimmed.fq ", trimming_result_r2_file,"_unpaired.fq ",
-                            "ILLUMINACLIP:", file.path(config$tools_path, config$trimmomatic_adapter),
+                            "ILLUMINACLIP:", file.path(config$tools_path, config$ref_data_trimmomatic_adapter),
                             ":2:30:10 LEADING:20 TRAILING:20 SLIDINGWINDOW:5:20 MINLEN:",config$trimmomatic_MINLEN,
                             " 2> ",trimmomatic_out_logfile)
       runSystemCommand(myAppName, 'Trimmomatic', 'trimming', src_command, config$verbose)
@@ -215,7 +215,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
       src_command <- paste0(file.path(config$anaconda_bin_path,config$bsmap), " -r 0 -s 16 -n 1 ",
                             " -a ", trimming_result_r1_file,"_trimmed.fq",
                             " -b ", trimming_result_r2_file,"_trimmed.fq",
-                            " -d ", file.path(config$ref_data_path, config$reference_sequence_file),
+                            " -d ", file.path(config$ref_data_path, config$ref_data_sequence_file),
                             " -p ", min(config$threads, 8)," -o ", paste0(mapping_result_file, ".sam"))
       runSystemCommand(myAppName, 'BSMAP', 'mapping', src_command, config$verbose)
     }else{
@@ -466,7 +466,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -METRIC_ACCUMULATION_LEVEL ALL_READS ",
                             " -INPUT ", paste0(rmdups_result_file,".rmdups.bam"), 
                             " -OUTPUT ", paste0(basic_mapping_metrics_result_file,"_basic_mapping_metrics.txt"),
-                            " -REFERENCE_SEQUENCE ", file.path(config$ref_data_path, config$reference_sequence_file))
+                            " -REFERENCE_SEQUENCE ", file.path(config$ref_data_path, config$ref_data_sequence_file))
       runSystemCommand(myAppName, 'Picard', 'Basic Mapping Metrics', src_command, config$verbose)
     }else{
       skipProcess(myAppName, 'Picard', 'Basic Mapping Metrics',
@@ -514,7 +514,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     if(config$overwrite_results | !(file.exists(paste0(on_target_result_file,"_on_target_reads")))) {
       src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
                             " intersect -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"), 
-                            " -b ", file.path(config$ref_data_path, config$intervals_file), 
+                            " -b ", file.path(config$ref_data_path, config$ref_data_intervals_file), 
                             " > ",paste0(on_target_result_file, "_on_target_reads"))
       runSystemCommand(myAppName, 'BEDTools', 'Intersect on_target_reads', src_command, config$verbose)
     }else{
@@ -539,10 +539,10 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                                     )) {
       src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem,
                             " -jar ", file.path(config$tools_path, config$gatk),
-                            " -T DepthOfCoverage -R ", file.path(config$ref_data_path, config$reference_sequence_file), 
+                            " -T DepthOfCoverage -R ", file.path(config$ref_data_path, config$ref_data_sequence_file), 
                             " -I ", paste0(clipping_result_file,".clipped.bam"),
                             " -o ", paste0(depth_of_cov_result_file,"_gatk_target_coverage"),
-                            " -L ", file.path(config$ref_data_path, config$intervals_file),
+                            " -L ", file.path(config$ref_data_path, config$ref_data_intervals_file),
                             " -ct 1 -ct 10 -ct 20", 
                             " > ", gatk_depth_logfile)
       runSystemCommand(myAppName, 'GATK', 'depth_of_coverage', src_command, config$verbose)
@@ -572,7 +572,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                                     file.exists(methratio_logfile)
                                     )) {
       src_command <- paste0(config$python2, " ", file.path(config$tools_path, config$methratio), 
-                            " -d ", file.path(config$ref_data_path, config$reference_sequence_file), 
+                            " -d ", file.path(config$ref_data_path, config$ref_data_sequence_file), 
                             #" -s ", config$anaconda_bin_path,
                             " -m 1 -z -i skip", 
                             " -o ", paste0(methyl_result_file,".methylation_results.txt")," ", paste0(clipping_result_file,".clipped.bam"),
@@ -615,7 +615,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     if(config$overwrite_results | !(file.exists(paste0(methyl_result_file,".methylation_results.bed.panel")))) {
       src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
                             " intersect -bed -abam ",  paste0(methyl_result_file,".methylation_results.bed"), 
-                            " -b ",file.path(config$ref_data_path, config$intervals_file),
+                            " -b ",file.path(config$ref_data_path, config$ref_data_intervals_file),
                             " -u > ",paste0(methyl_result_file,".methylation_results.bed.panel"))
       runSystemCommand(myAppName, 'BEDTools', 'intersect - capture region', src_command, config$verbose)
       

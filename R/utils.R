@@ -122,10 +122,10 @@ checkRequiredTools <- function(config){
 #########################################
 checkRequiredFiles <- function(config){
   cytoMethRefFiles <- c(
-    file.path(config$ref_data_path, config$reference_sequence_file),
-    file.path(config$ref_data_path, paste0(config$reference_sequence_file,".fai")),
-    file.path(config$ref_data_path, paste0(tools::file_path_sans_ext(config$reference_sequence_file),".dict")),
-    file.path(config$ref_data_path, config$intervals_file),
+    file.path(config$ref_data_path, config$ref_data_sequence_file),
+    file.path(config$ref_data_path, paste0(config$ref_data_sequence_file,".fai")),
+    file.path(config$ref_data_path, paste0(tools::file_path_sans_ext(config$ref_data_sequence_file),".dict")),
+    file.path(config$ref_data_path, config$ref_data_intervals_file),
     file.path(config$tools_path, config$trimmomatic_adapter))
   
   for(i in 1:length(cytoMethRefFiles)){
