@@ -8,6 +8,7 @@ while true; do
     read -p "Do you wish to install or update required conda packages? (y/n)" yn
     case $yn in
         [Yy]* ) conda update conda;
+                conda update conda-build;
                 conda install -y -c bioconda bsmap;
                 conda install -y -c bioconda bamtools;
                 conda install -y -c bioconda bamutil;

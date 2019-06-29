@@ -140,6 +140,7 @@ The follwing *conda* packages are required by CytoMeth and these packages are au
 These tools can be also manually installed by typing the command in the console window:
 ```bash
 conda update conda
+conda update conda-build
 conda install -y -c bioconda bsmap
 conda install -y -c bioconda bamtools
 conda install -y -c bioconda bamutil
