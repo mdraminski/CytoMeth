@@ -181,7 +181,7 @@ docker build -t cytometh .
 docker run -it cytometh /bin/bash
 ```
 
-Reference data is several Gigabytes big therefore it is not included in the parent docker. However you can download it by running '*install.data.sh*' script in the command window. 
+Reference data is several Gigabytes big therefore it is not included in the parent docker. However after successful running of the docker you can download the data by running '*install.data.sh*' script in the CytoMeth main directory. 
 ```bash
 ./install.data.sh
 ```
