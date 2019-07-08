@@ -149,10 +149,43 @@ plotMethStatsSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2")
 }
 
 ####################################################
-### PLOT: Methylation Levels
-plotMethLevels <- function(meth_data, config, breaks = c(0,10,20,40,60,80,90,100), pal = brewer.pal(8, "Dark2"), share = F, save = T){
+### PLOT: Beta Values Boxplot
+plotBetaValuesSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T){
   
-  percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage*100 } )
+  percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage } )
+  methyl_levels <- list()
+  for (i in 1:length(meth_data)){
+    methyl_levels[[i]] <- data.frame(sample.id = meth_data[[i]]@sample.id, 
+                                     beta_values = as.numeric(percentage_meth[[i]]),
+                                     stringsAsFactors = F)
+  }
+  methyl_levels <- rbindlist(methyl_levels)
+  methyl_levels <- methyl_levels[order(methyl_levels$sample.id),]
+  methyl_levels <- data.frame(methyl_levels)
+  methyl_levels$sample.id <- factor(methyl_levels$sample.id, levels = sort(unique(methyl_levels$sample.id)))
+  
+  gg <- ggplot(methyl_levels, aes(x=sample.id, y=beta_values)) +
+    geom_boxplot(outlier.colour="red", outlier.shape=42, outlier.size=3, notch=FALSE, fill=pal[1], color="black") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(text = element_text(size=15)) + 
+    theme(legend.position="none") +  
+    ggtitle("Methylation over samples ") +
+    xlab("Sample Id") + 
+    ylab("Beta Value")
+  
+  if(save){
+    plotfile <- file.path(config$results_path,'QC_report',paste0('BetaValuesSummary.',config$plot_format))
+    ggsave(plotfile, gg)
+  }
+  
+  return(gg)
+}
+####################################################
+### PLOT: Methylation Levels
+plotMethLevels <- function(meth_data, config, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0.9,1), pal = brewer.pal(8, "Dark2"), share = F, save = T){
+  
+  percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage } )
   methyl_levels <- list()
   for (i in 1:length(meth_data)){
     cnt <- table(cut(percentage_meth[[i]], breaks = breaks, right = F, include.lowest = T))
@@ -196,11 +229,11 @@ plotMethLevels <- function(meth_data, config, breaks = c(0,10,20,40,60,80,90,100
 ###### PLOT: Hyper/Hypo CpG genom & islands annotation for each sample.
 #meth_data <- methData
 #config <- conf
-plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(20,80), config, pal = brewer.pal(8, "Dark2"), share = F, save = T){
+plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(0.2,0.8), config, pal = brewer.pal(8, "Dark2"), share = F, save = T){
   
   cpg.gene <- readTranscriptFeatures(file.path(config$ref_data_path, config$ref_data_CpGGenomAnnotation))
   cpg.island <- readFeatureFlank(file.path(config$ref_data_path, config$ref_data_CpgIslandAnnotation), feature.flank.name=c("CpGi","shores"))
-  percentage_meth <- lapply(meth_data, function(x){ x$numCs/x$coverage*100 } )
+  percentage_meth <- lapply(meth_data, function(x){ x$numCs/x$coverage } )
   
   meth_data_hypo <- list()
   meth_data_hyper <- list()
