@@ -1,3 +1,9 @@
+---
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
 # CytoMeth
 <!--- 
 CytoMeth is a tool that processes methylation data designed to deal with paired-end data sequencing from Illumina. 
@@ -26,7 +32,7 @@ If you are sure all of the above is working correctly (*R*,  *conda*, *Java*, *p
 ## Preparation of the Environment
 
 ### R and Rscript
-Check if there is R installed on your machine. Type in the console window:
+Check if there is R installed on your machine. Type in a terminal window:
 
 ```bash
 R --version
@@ -70,7 +76,7 @@ All CytoMeth users need to add path to anaconda to the *PATH* system variable in
 echo 'export PATH="/opt/anaconda/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
-Now, conda should be available from the console window. Open the new one and type again:
+Now, conda should be available from a terminal window. Open the new one and type again:
 ```bash
 conda info
 ```
@@ -102,7 +108,7 @@ sudo apt-get install openjdk-8-jre-headless
 
 ### Installation script
 To install or update all required *R* and conda packages, download required reference files and set up CytoMeth,
-run '*install.sh*' and '*install.data.sh*' scripts both located in CytoMeth directory. The first one installs all required R and conda packages and the second one downloads all required reference files and basic example data. For the first time select '*y*' option to install all required by CytoMeth components. All required packages and files should be installed or updated automatically and if that succeeded there is no need of any manual installation presented later below. If there is any missing component and CytoMeth stops with appropriate warning you may take a look at a specific section 'Required Tools' or 'Reference Files'. In that case please also try to rerun the script in the console window. Please notice that size of reference files is several GB and it can take a few minutes to download them, however the downloading time strongly depends on your internet connection speed.
+run '*install.sh*' and '*install.data.sh*' scripts both located in CytoMeth directory. The first one installs all required R and conda packages and the second one downloads all required reference files and basic example data. For the first time select '*y*' option to install all required by CytoMeth components. All required packages and files should be installed or updated automatically and if that succeeded there is no need of any manual installation presented later below. If there is any missing component and CytoMeth stops with appropriate warning you may take a look at a specific section 'Required Tools' or 'Reference Files'. In that case please also try to rerun the script in a terminal. Please notice that size of reference files is several GB and it can take a few minutes to download them, however the downloading time strongly depends on your internet connection speed.
 ```bash
 ./install.sh
 ./install.data.sh
@@ -121,7 +127,7 @@ The script '*install.sh*' file should install the following *R* packages:
 - GenomicRanges (Bioconductor package)
 - genomation (Bioconductor package)
 
-These packages can be also manually installed by typing the command in the console window:
+These packages can be also manually installed by typing the command in a terminal window:
 ```bash
 Rscript R/install.packages.R
 ```
@@ -137,7 +143,7 @@ The follwing *conda* packages are required by CytoMeth and these packages are au
 - fastqc (ver. 0.11.8)
 - samtools (ver. 1.9)
 
-These tools can be also manually installed by typing the command in the console window:
+These tools can be also manually installed by typing the command in the a terminal window:
 ```bash
 conda update conda
 conda update conda-build
@@ -155,10 +161,10 @@ Java tools (in CytoMeth '*/tools/*' directory) are provided with CytoMeth with t
 
 - Trimmomatic (ver. 0.36)
 - GATK (ver. 3.8.1)
-- picard (ver. 2.20.1)
+- picard (ver. 1.141) or picard2 (ver. 2.20.6)
 
 #### Required 'conda.info' file 
-CytoMeth also requires in its main directory '*conda.info*' file that can be manually created by typing the following command in the console window: 
+CytoMeth also requires in its main directory '*conda.info*' file that can be manually created by typing the following command in a terminal window: 
 ```bash
 conda info --json > conda.info
 ```
@@ -166,7 +172,7 @@ This file is also created during installation process.
 
 
 ### Reference Files
-Reference files required by CytoMeth are automatically installed by '*install.sh*' script. If you would like to download them manually plese run the following commands in console window:
+Reference files required by CytoMeth are automatically installed by '*install.sh*' script. If you would like to download them manually plese run the following commands in a terminal window:
 
 ```bash
 wget -c -O ./RefData/CytoMethRefData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/CytoMethRefData.zip;
@@ -190,14 +196,17 @@ Reference data is several Gigabytes big therefore it is not included in the pare
 
 ## Configuration
 
+### File 'config.yml'
 The file '*config.yml*' contains CytoMeth input parameters and before use of CytoMeth please define your processing. The default settings look like below:
 
-```
+```bash
 #General Params
+verbose: TRUE
 threads: 12
-java_mem: 12G
-overwrite_results: TRUE
+java_mem: 16G
+overwrite_results: FALSE
 clean_tmp_files: TRUE
+plot_format: "pdf"
 
 #in/out paths
 input_path: "./input/"
@@ -207,12 +216,16 @@ results_path: "./results/"
 ### Reference Data Definition
 reference_sequence_file: "hg38_phage.fa"
 intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
-trimmomatic_adapter: "Trimmomatic-0.36/adapters/TruSeq3-PE-2.fa"
+
+# Specific Tools params
+trimmomatic_MINLEN: 50
+sqtk_run: FALSE
+sqtk_subset: 10000000
 ```
 
-Input parameters: 
+Input parameters:
 
-- threads - prints additional info and commands on the screen
+- verbose - prints additional info and commands on the screen
 - threads - defines number of threads used by tools. Most of the tools does not gain any processing speed for more than 10-12  threads.
 - java_mem - amount of memory dedicated to Java tools. If you face Java 'out of memory' error please increase the parameter.
 - overwrite_results - if TRUE then all result files from the sample processed again will be overwritten. If FALSE CytoMeth will skip phases that related phase result file exists in apriopriate results_path.
@@ -222,32 +235,65 @@ Input parameters:
 - results_path - the path to keep all temporary and result files.
 - anaconda_bin_path - path to conda and conda packages. This parameter is retrieved from 'conda.info' file and it is commented out by default. If you want to specify specific path to conda/bin directory uncommend it and define. This parameter overwrites the setting from 'conda.info' file.
 - ref_data_sequence_file - additional control sequence file (see Input files section) by default it is set on 'hg38_phage.fa'.
-- ref_data_intervals_file - panel file (see Input files section)  by default it is set on SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed'
+- ref_data_intervals_file - panel file (see Input files section)  by default it is set on SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed'
 - trimmomatic_MINLEN - MINLEN parameter of the trimmomatic tool.
 - sqtk_run - if TRUE initial sqtk sampling is processed.
 - sqtk_subset - size of the subset to select by the sqtk tool.
+
+### File 'tools.conf.yml'
+The file '*tools.conf.yml*' contains CytoMeth tools parameters and it is located in tools directory. The settings in the file configure paths and names of all tools needed by CytoMeth processing default values are highly recommended. The file by default is defined as below:
+
+```bash
+### TOOLS - path and tools cfg file
+tools_path: "./tools/"
+tools_config: "tools.conf.csv"
+
+### TOOLS Definition 
+bedtools: "bedtools"
+samtools: "samtools"
+bamtools: "bamtools"
+bamUtil: "bam"
+bsmap: "bsmap"
+methratio: "methratio/methratio.py"
+trimmomatic: "Trimmomatic/trimmomatic-0.36.jar" 
+picard: "Picard/picard.jar"
+picard_ver: 1
+gatk: "GATK/GenomeAnalysisTK.jar"
+fastqc: "fastqc"
+seqtk: "seqtk"
+bisSNP:
+
+### python2 path
+python2: "python2"
+
+### Reference Data - Path
+ref_data_path: "./RefData/"
+
+ref_data_trimmomatic_adapter: "Trimmomatic/adapters/TruSeq3-PE-2.fa"
+ref_data_CpgIslandAnnotation: "cpgIslandExt.hg38.bed"
+ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
+```
 
 ## Input files
 
 Before you run the processing you need to: 
 
-- Copy your nucleotide sequences FASTA R1/R2 files (both in *.fastq* format) named: '*samplename\_R1.fastq*' and '*samplename\_R2.fastq*' (where *samplename* is a unique name of your sequenced sample) to the '*./input/*' directory. 
+- Copy your nucleotide sequences FASTA R1/R2 files (both in *.fastq* format) named: 'SAMPLENAME\_R1.fastq' and 'SAMPLENAME\_R2.fastq' (where 'SAMPLENAME' is a unique name of your sequenced sample) to the '*./input/*' directory.
 - If your files are compressed (*.gz* format) please decompress before use:
-```bash
-gunzip - c SAMPLENAME_R1.fastq.gz > SAMPLENAME_R1.fastq
-gunzip - c SAMPLENAME_R2.fastq.gz > SAMPLENAME_R2.fastq
-```
+  ```bash
+  gunzip - c SAMPLENAME_R1.fastq.gz > SAMPLENAME_R1.fastq
+  gunzip - c SAMPLENAME_R2.fastq.gz > SAMPLENAME_R2.fastq
+  ```
 - Prepare reference FASTA (in .fa or .fasta format) file with additional control sequence. CytoMeth comes with 'hg38_phage.fa' reference file with an additional sequence used as control (phage DNA sequence) and the file 'hg38.fa' without that additional seqence. Any new reference '.fa' file requires corresponding '.fai' and '.dict' files that should be generated.
-- Prepare panel file (in .bed format) with panel coordinates and control coordinates 'SeqCap\_EPI\_CpGiant\_hg38\_custom\_liftOver.bed''.
+- Prepare panel file (in .bed format) with panel coordinates and control coordinates '*SeqCap\_EPI\_CpGiant\_hg38\_custom\_liftOver\_phage.bed*'.
 
 If you used different panel or performed whole genome analysis, please prepare the '.bed' file defining genomic regions covered by your design, to compute not biased statistics.
 The control is used to estimate bisulfite conversion efficiency. Remember to add the sequence of your control e.g. enterobacteria phage lambda genome to the reference genome file so that captured controls can be mapped to the lambda genome. Reassuming, the reference genome file must be extended with a control sequence.
 Important: Check if your panel file (bed format) control sequence coordinates has the same name (header ID) as in reference fasta file.
 
-
 ## Running the CytoMeth Processing
 
-To run the batch processing of all samples located in *'/input/'* directory please type in the console window:
+To run the batch processing of all samples located in *'/input/'* directory please type in a terminal window:
 ```bash
 Rscript R/CytoMeth.R
 ```
@@ -259,21 +305,34 @@ Rscript R/CytoMethQC.R
 The script above creates summary csv file that aggregates quality measures values for all processed samples. It also creates two barplots: overall coverage report plot, CpG vs nonCpG frequency report. The methylation results can be also visualised in respect to specific genomic regions.
 We annotate the level of methylation to CpG islands, promoters, intergenic regions, introns and exons and provide proper plots in '*results/QC_report*' directory.
 
-You can run both phases by running '*CytoMeth.sh*' bash script in consone window.
+You can run both phases by running '*CytoMeth.sh*' bash script in a terminal window:
 ```bash
 ./CytoMeth.sh
 ```
 
 ## Output files
-The result files are located in *'/results/methyl_results'* directory:
 
-- '*SAMPLENAME.methylation_results.bed.panel*'
-- '*SAMPLENAME.methylation_results.bed.panel.no_control.CpG_min10*'
-- '*SAMPLENAME.methylation_results.bed.panel.no_control.non_CpG_min10*'
+### Methylation beta values
+The result files are located in *'/results/methyl_results'* directory. For each sample there are three output files:
 
-After the processing of each single sample CytoMeth creates a summary file associated with that sample. The default location for this summary file is '*results/QC_report*'. Example of that file for is below (created for fake data):
+- 'SAMPLENAME.methylation_results.bed.panel'
+- 'SAMPLENAME.methylation_results.bed.panel.no_control.CpG_min10'
+- 'SAMPLENAME.methylation_results.bed.panel.no_control.non_CpG_min10'
 
-```
+### FastQC report files
+The result files are located in *'/results/QC/FastQC'* directory. For each sample there are four output files:
+
+- 'SAMPLENAME_R1_fastqc.zip'
+- 'SAMPLENAME_R2_fastqc.zip'
+- 'SAMPLENAME_R2_fastqc.html'
+- 'SAMPLENAME_R2_fastqc.html'
+
+There is no need to unzip these files, FastQC report is available by opening html file in the browser.
+
+### CytoMeth Quality Control report files
+After the processing of each single sample CytoMeth creates a summary file associated with that sample. The default location for this summary file is '*results/QC_report/SAMPLENAME_QC_summary.yml*'. Example of that *yml* file is below (created for fake data):
+
+```bash
 Sample_ID: small_FAKE03
 Input_read_pairs: 289087.0
 Read_Pairs_Surviving_trimming: 289086.0
@@ -297,6 +356,24 @@ Number_of_Cs_in_panel_CpG_cov_max9: 8594
 Prc_of_Cs_in_panel_CpG_cov_min10: 79.7550059
 Prc_of_Cs_in_panel_CpG_cov_max9: 20.2449941
 ```
+
+### CytoMeth Quality Control summary file
+The file '*results/QC_report/SummaryQC.csv*' contains all QC report files results for all samples.
+
+### CytoMeth Quality Control plots 
+The directory '*results/QC_report/*' contains set of plot files:
+
+- 'SAMPLENAME_histCpGStats.pdf'
+- 'BetaValuesSummary.pdf'
+- 'SummaryCntCommonCpG.pdf'
+- 'SummaryCpGCoverage.pdf'
+- 'SummaryHypermethylatedCpGGenomAnnotation.pdf'
+- 'SummaryHypermethylatedCpGIslandsAnnotation.pdf'
+- 'SummaryHypomethylatedCpGGenomAnnotation.pdf'
+- 'SummaryHypomethylatedCpGIslandsAnnotation.pdf'
+- 'SummaryMethylationLevel.pdf'
+- 'SummarySitesCovBy10CpGnonCpG.pdf'
+- 'SummarySitesCovBy10.pdf'
 
 # Authors
 This tool has been created and implemented by:

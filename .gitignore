@@ -37,8 +37,10 @@ rsconnect/
 
 #CytoMeth RefData and input files
 /input/
+/input_test/
 /RefData/
 /results/
+/results_test/
 
 conda.info
 *.Rproj

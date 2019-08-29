@@ -172,6 +172,20 @@ runSystemCommand <- function(app_name, process_name, subprocess_name, command, v
 }
 
 #########################################
+# checkLog
+#########################################
+checkLog <- function(logfile, success_text, process_name){  
+  log_text <- readLines(logfile)
+    if(!any(grepl(success_text, log_text))){
+      print(paste0("Error! Process ", process_name, " is not completed successfully! See the log file: ", logfile))
+      print(log_text)
+      return(F)
+    }else{
+      return(T)
+    }
+}
+
+#########################################
 # getLinesNumber
 #########################################
 getLinesNumber <- function(filepath) {

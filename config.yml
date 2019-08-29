@@ -3,7 +3,7 @@ verbose: TRUE
 threads: 12
 java_mem: 16G
 overwrite_results: FALSE
-clean_tmp_files: FALSE
+clean_tmp_files: TRUE
 plot_format: "pdf"
 
 #in/out paths
@@ -13,7 +13,7 @@ results_path: "./results/"
 
 ### Reference Data Definition
 ref_data_sequence_file: "hg38_phage.fa"
-ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
+ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed"
 
 # Specific Tools params
 trimmomatic_MINLEN: 50

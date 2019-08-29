@@ -1,6 +1,16 @@
 CytoMeth - Changes
 =============
 
+## Version 0.9.10
+* picard updated
+* tools.conf.yml updated
+* readme file updated and extended
+* output files section in readme file updated and extended
+
+## Version 0.9.9
+* picard updated
+* checking of log files updated
+
 ## Version 0.9.8
 * README updated
 * QC extended

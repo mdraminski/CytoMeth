@@ -1,6 +1,8 @@
 FROM ubuntu:disco
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/anaconda/bin:${PATH}"
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 RUN apt-get update && apt-get install -y --install-recommends apt-utils software-properties-common dirmngr apt-transport-https build-essential 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
