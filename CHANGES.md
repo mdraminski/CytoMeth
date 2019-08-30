@@ -1,6 +1,9 @@
 CytoMeth - Changes
 =============
 
+## Version 0.9.11
+* new fontsize parameter in plots
+
 ## Version 0.9.10
 * picard updated
 * tools.conf.yml updated

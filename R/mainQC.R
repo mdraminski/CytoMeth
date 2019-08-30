@@ -19,7 +19,7 @@ getQCSummary <- function(config, save = T){
 
 ####################################################
 #### PLOT: Number of sites in CpG context covered by more/less than 10
-plotSitesCovBy10 <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), share = F, save = T){
+plotSitesCovBy10 <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 14){
   
   qc_summary_coverage <- rbind(data.frame(SampleID = qc_summary$Sample_ID, Number = qc_summary$Number_of_Cs_in_panel_CpG_cov_min10, Coverage = "cov>=10", stringsAsFactors = F),
                                data.frame(SampleID = qc_summary$Sample_ID, Number = qc_summary$Number_of_Cs_in_panel_CpG_cov_max9, Coverage = "cov<10", stringsAsFactors = F))
@@ -32,11 +32,11 @@ plotSitesCovBy10 <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), s
     gg <- gg + geom_bar(stat="identity")
   
   gg <- gg + theme_minimal() +
-    theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
-    theme(legend.text=element_text(size=15)) + 
-    theme(text = element_text(size=15)) +
     theme_light() + scale_fill_manual(values=pal[1:2]) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(text = element_text(size = fontsize)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1, size = fontsize)) +
+    theme(axis.text.y = element_text(hjust = 1, size = fontsize)) +
+    theme(legend.text = element_text(size = fontsize)) + 
     ylab("Number of sites") +
     xlab("Sample ID") +
     ggtitle("Number of sites in CpG context covered by more/less than 10.")
@@ -50,7 +50,7 @@ plotSitesCovBy10 <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), s
 
 ####################################################
 #### PLOT: Number of sites covered by minimum 10 reads \nseparately for sites in CpG and non-CpG context
-plotSitesCovBy10CpGnonCpG <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), share = F, save = T){
+plotSitesCovBy10CpGnonCpG <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 14){
   
   qc_summary_cpg <- rbind(data.frame(SampleID = qc_summary$Sample_ID, Number = qc_summary$Number_of_Cs_in_panel_CpG_cov_min10, Context = "CpG", stringsAsFactors = F),
                           data.frame(SampleID = qc_summary$Sample_ID, Number = qc_summary$Number_of_Cs_in_panel_non_CpG_cov_min10, Context = "non-CpG", stringsAsFactors = F))
@@ -62,11 +62,11 @@ plotSitesCovBy10CpGnonCpG <- function(qc_summary, config, pal = brewer.pal(8, "D
     gg <- gg + geom_bar(stat="identity")
   
   gg <- gg + theme_minimal() +
-    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-    theme(legend.text=element_text(size=15)) + 
-    theme(text = element_text(size=15)) +
     theme_light() + scale_fill_manual(values=pal[3:4]) + 
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(text = element_text(size = fontsize)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1, size = fontsize)) +
+    theme(axis.text.y = element_text(hjust = 1, size = fontsize)) +
+    theme(legend.text = element_text(size = fontsize)) + 
     ylab("Number of sites") +
     xlab("Sample ID") +
     ggtitle("Number of sites covered by minimum 10 reads \nseparately for sites in CpG and non-CpG context.")
@@ -123,7 +123,7 @@ plotMethStats <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save 
 
 ####################################################
 ###### PLOT: Generate and save log10 Coverage boxplot for all samples
-plotMethStatsSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T){
+plotMethStatsSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T, fontsize = 14){
   
   sampleCov <- lapply(meth_data, function(x){
     data.frame(coverage = log10(x$coverage), sample_id = x@sample.id)
@@ -134,8 +134,11 @@ plotMethStatsSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2")
   gg <- ggplot(sampleCov, aes(x=sample_id, y=coverage)) + 
     geom_boxplot(outlier.colour="darkred", outlier.shape=1, outlier.size=0.5, fill = pal[1], color="black") +
     theme_minimal() +
-    theme(plot.title = element_text(hjust = 0.5, size = 14)) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(text = element_text(size = fontsize)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1, size = fontsize)) +
+    theme(axis.text.y = element_text(hjust = 1, size = fontsize)) +
+    theme(legend.text=element_text(size = fontsize)) + 
+    #theme(plot.title = element_text(hjust = 0.5, size = 14)) +
     ggtitle("CpG Coverage for the experiment") +
     scale_y_continuous(name = "log 10 of read Coverage per base") +
     scale_x_discrete(name = "Sample Id") 
@@ -150,7 +153,7 @@ plotMethStatsSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2")
 
 ####################################################
 ### PLOT: Beta Values Boxplot
-plotBetaValuesSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T){
+plotBetaValuesSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T, fontsize = 14){
   
   percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage } )
   methyl_levels <- list()
@@ -167,8 +170,9 @@ plotBetaValuesSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2"
   gg <- ggplot(methyl_levels, aes(x=sample.id, y=beta_values)) +
     geom_boxplot(outlier.colour="red", outlier.shape=42, outlier.size=3, notch=FALSE, fill=pal[1], color="black") +
     theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    theme(text = element_text(size=15)) + 
+    theme(text = element_text(size = fontsize)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1, size = fontsize)) +
+    theme(axis.text.y = element_text(hjust = 1, size = fontsize)) +
     theme(legend.position="none") +  
     ggtitle("Methylation over samples ") +
     xlab("Sample Id") + 
@@ -183,7 +187,7 @@ plotBetaValuesSummary <- function(meth_data, config, pal = brewer.pal(8, "Dark2"
 }
 ####################################################
 ### PLOT: Methylation Levels
-plotMethLevels <- function(meth_data, config, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0.9,1), pal = brewer.pal(8, "Dark2"), share = F, save = T){
+plotMethLevels <- function(meth_data, config, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0.9,1), pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 14){
   
   percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage } )
   methyl_levels <- list()
@@ -210,9 +214,10 @@ plotMethLevels <- function(meth_data, config, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0
   
   gg <- gg + theme_minimal() +
     scale_fill_manual(values = pal) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    theme(legend.text=element_text(size=15)) + 
-    theme(text = element_text(size=15)) + 
+    theme(text = element_text(size = fontsize)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1, size = fontsize)) +
+    theme(axis.text.y = element_text(hjust = 1, size = fontsize)) +
+    theme(legend.text=element_text(size = fontsize)) + 
     ggtitle("Methylation Levels") +
     xlab("Sample Id") + 
     ylab("Frequency")
@@ -229,7 +234,7 @@ plotMethLevels <- function(meth_data, config, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0
 ###### PLOT: Hyper/Hypo CpG genom & islands annotation for each sample.
 #meth_data <- methData
 #config <- conf
-plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(0.2,0.8), config, pal = brewer.pal(8, "Dark2"), share = F, save = T){
+plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(0.2,0.8), config, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 14){
   
   cpg.gene <- readTranscriptFeatures(file.path(config$ref_data_path, config$ref_data_CpGGenomAnnotation))
   cpg.island <- readFeatureFlank(file.path(config$ref_data_path, config$ref_data_CpgIslandAnnotation), feature.flank.name=c("CpGi","shores"))
@@ -244,16 +249,16 @@ plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(0.2,0.8), config, pa
   }
   
   plotList <- list(
-    plotCpGGenomAnnotation(meth_data_hyper, cpg.gene, config, pal, subtitle = "Hypermethylated", share, save),
-    plotCpGGenomAnnotation(meth_data_hypo, cpg.gene, config, pal, subtitle = "Hypomethylated", share, save),
-    plotCpGIslandsAnnotation(meth_data_hyper, cpg.island, config, pal, subtitle = "Hypermethylated", share, save),
-    plotCpGIslandsAnnotation(meth_data_hypo, cpg.island, config, pal, subtitle = "Hypomethylated", share, save))
+    plotCpGGenomAnnotation(meth_data_hyper, cpg.gene, config, pal, subtitle = "Hypermethylated", share, save, fontsize),
+    plotCpGGenomAnnotation(meth_data_hypo, cpg.gene, config, pal, subtitle = "Hypomethylated", share, save, fontsize),
+    plotCpGIslandsAnnotation(meth_data_hyper, cpg.island, config, pal, subtitle = "Hypermethylated", share, save, fontsize),
+    plotCpGIslandsAnnotation(meth_data_hypo, cpg.island, config, pal, subtitle = "Hypomethylated", share, save, fontsize))
   return(plotList)
 }
 
 ####################################################
 ###### PLOT: Hyper/Hypo CpG genom annotation for each sample.
-plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T){
+plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T, fontsize = 14){
   
   annot_summary <- lapply(meth_data, function(x){ 
     annot <- annotateWithGeneParts(as(x,"GRanges"), gene_annot_data) 
@@ -275,9 +280,10 @@ plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = bre
   }
   gg <- gg + theme_minimal() +
     scale_fill_manual(values = pal) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    theme(legend.text=element_text(size=15)) + 
-    theme(text = element_text(size=15)) +
+    theme(text = element_text(size = fontsize)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1, size = fontsize)) +
+    theme(axis.text.y = element_text(hjust = 1, size = fontsize)) +
+    theme(legend.text=element_text(size = fontsize)) + 
     ggtitle(paste(subtitle,"CpG Genom Annotation")) +
     xlab("Sample Id") + 
     ylab("Frequency")
@@ -291,7 +297,7 @@ plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = bre
 
 ####################################################
 ###### PLOT: Hyper/Hypo CpG islands annotation for each sample.
-plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T){
+plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T, fontsize = 14){
   
   annot_summary <- lapply(meth_data, function(x){ 
     annot <- annotateWithFeatureFlank(as(x,"GRanges"), cpg_annot_data$CpGi, cpg_annot_data$shores, feature.name="CpGi", flank.name="shores")
@@ -313,9 +319,10 @@ plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = br
   }
   gg <- gg + theme_minimal() +
     scale_fill_manual(values = pal) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    theme(legend.text=element_text(size=15)) + 
-    theme(text = element_text(size=15)) +
+    theme(text = element_text(size = fontsize)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1, size = fontsize)) +
+    theme(axis.text.y = element_text(hjust = 1, size = fontsize)) +
+    theme(legend.text=element_text(size = fontsize)) + 
     ggtitle(paste(subtitle,"CpG Islands Annotation")) +
     xlab("Sample Id") + 
     ylab("Frequency")
@@ -329,7 +336,7 @@ plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = br
 
 ###################################################
 ##### Number of Common CpG Shared Between Samples
-plotCntCommonCpG <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T){
+plotCntCommonCpG <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T, fontsize = 14){
   
   commonCpg <- lapply(meth_data, function(x){
     data.frame(cpg = paste0(x$chr, "_", x$start))
@@ -340,8 +347,10 @@ plotCntCommonCpG <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), sa
     geom_bar(fill = pal[1]) +
     theme_minimal() +
     scale_x_continuous(breaks = round(seq(min(1), max(length(meth_data), by = 1),1))) +
-    theme(legend.text=element_text(size=15)) + 
-    theme(text = element_text(size=15)) + 
+    theme(text = element_text(size = fontsize)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1, size = fontsize)) +
+    theme(axis.text.y = element_text(hjust = 1, size = fontsize)) +
+    theme(legend.text=element_text(size = fontsize)) + 
     ggtitle("Common CpG Shared Between Samples") +
     xlab("Number of samples") + 
     ylab("Number of common CpG")
