@@ -123,6 +123,7 @@ The script '*install.sh*' file should install the following *R* packages:
 - rjson (CRAN package)
 - RColorBrewer (CRAN package)
 - yaml (CRAN package)
+- stringr (CRAN package)
 - methylKit (Bioconductor package)
 - GenomicRanges (Bioconductor package)
 - genomation (Bioconductor package)
@@ -216,6 +217,7 @@ results_path: "./results/"
 ### Reference Data Definition
 reference_sequence_file: "hg38_phage.fa"
 intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
+ref_sequence_name: "NC_001416"
 
 # Specific Tools params
 trimmomatic_MINLEN: 50
@@ -236,6 +238,7 @@ Input parameters:
 - anaconda_bin_path - path to conda and conda packages. This parameter is retrieved from 'conda.info' file and it is commented out by default. If you want to specify specific path to conda/bin directory uncommend it and define. This parameter overwrites the setting from 'conda.info' file.
 - ref_data_sequence_file - additional control sequence file (see Input files section) by default it is set on 'hg38_phage.fa'.
 - ref_data_intervals_file - panel file (see Input files section)  by default it is set on SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed'
+- ref_control_sequence_name - name of control sequence (by default phage sequence)
 - trimmomatic_MINLEN - MINLEN parameter of the trimmomatic tool.
 - sqtk_run - if TRUE initial sqtk sampling is processed.
 - sqtk_subset - size of the subset to select by the sqtk tool.
@@ -374,6 +377,12 @@ The directory '*results/QC_report/*' contains set of plot files:
 - 'SummaryMethylationLevel.pdf'
 - 'SummarySitesCovBy10CpGnonCpG.pdf'
 - 'SummarySitesCovBy10.pdf'
+
+# Version
+For more information please see CHANGES.md
+
+- Version: 0.9.12
+- Date: 13.09.2019
 
 # Authors
 This tool has been created and implemented by:

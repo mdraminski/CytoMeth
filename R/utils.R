@@ -1,4 +1,3 @@
-
 #########################################
 # readConfig
 #########################################
@@ -203,11 +202,14 @@ getLinesNumber <- function(filepath) {
 }
 
 #########################################
-# qc2dataframe
+# makeDataFrame
 #########################################
-qc2dataframe <- function(qc_report){
-  df <- t(as.data.frame(qc_report))
-  df <- data.frame(metric = row.names(df), value = as.character(df[,1]))
+makeDataFrame <- function(data, header){
+  if(length(data) != length(header))
+    stop("length(data) != length(header)")
+  df <- data.frame(matrix(nrow=1, ncol=length(data)))
+  colnames(df) <- header
+  df[1,] <- data
   return(df)
 }
 
@@ -258,4 +260,44 @@ openPlotFile <- function(filename, width = 10, height = 6, res = 72)
     pdf(filename, width = width, height = height)
   }
   return(T)
+}
+
+#########################################
+# qc2dataframe
+#########################################
+qc2dataframe <- function(qc_report){
+  # df <- t(as.data.frame(qc_report))
+  # df <- data.frame(metric = row.names(df), value = as.character(df[,1]))
+  df <- data.frame(value = unlist(qc_report))
+  return(df)
+}
+
+###############################
+#readMethylResultData
+###############################
+readMethylResultData <- function(methyl_result_file){
+  methyl_data <- NULL
+  if(checkIfFileExists(methyl_result_file)){
+    methyl_data <- data.table::fread(methyl_result_file, header = F, sep = '\t')
+    if(nrow(methyl_data) > 0){
+      colnames(methyl_data) <- c("chr","start","end","strand","context","ratio","eff_CT_count","C_count", "CT_count")
+    }else{
+      methyl_data <- NULL    
+    }
+  }
+  return(methyl_data)
+}
+
+###############################
+# getMethylSplitByCT_Count
+###############################
+# methyl_data <- methyl_result_data
+# ref_sequence_name <- config$ref_sequence_name
+getMethylSplitByCT_Count <- function(methyl_data, ref_sequence_name, eff_CT_count = 10){
+  methyl_data <- as.data.frame(methyl_data)
+  methyl_data <- methyl_data[methyl_data$chr != ref_sequence_name,]
+  retlist <- list(methyl_res_panel_df_no_control_CpG = NA, methyl_res_panel_df_no_control_nonCpG = NA)
+  retlist$methyl_res_panel_df_no_control_CpG <- methyl_data[methyl_data$context=='CG' & methyl_data$eff_CT_count >= eff_CT_count,]
+  retlist$methyl_res_panel_df_no_control_nonCpG <- methyl_data[methyl_data$context!='CG' & methyl_data$eff_CT_count >= eff_CT_count,]
+  return(retlist)
 }

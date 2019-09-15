@@ -1,6 +1,12 @@
 CytoMeth - Changes
 =============
 
+## Version 0.9.12
+* generation of QCSummary is now independet process
+* plot plotBetaValuesSummary supports data sampling and non-CpG context
+* new config parameter 'ref_control_sequence_name'
+* plots updated
+
 ## Version 0.9.11
 * new fontsize parameter in plots
 

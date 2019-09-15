@@ -7,6 +7,7 @@ install.packages("ggplot2", lib = Sys.getenv("R_LIBS_USER"), repos='http://cran.
 install.packages("RColorBrewer", lib = Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')
 install.packages("rjson", lib = Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')
 install.packages(c("yaml"),lib = Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')
+install.packages(c("stringr"),lib = Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')
 
 # install biocunductor packages
 bioPckg <- c("methylKit","GenomicRanges","genomation","genomationData")

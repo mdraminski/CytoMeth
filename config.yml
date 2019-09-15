@@ -14,6 +14,7 @@ results_path: "./results/"
 ### Reference Data Definition
 ref_data_sequence_file: "hg38_phage.fa"
 ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed"
+ref_control_sequence_name: "NC_001416"
 
 # Specific Tools params
 trimmomatic_MINLEN: 50

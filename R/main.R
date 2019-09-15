@@ -7,6 +7,7 @@ library("RColorBrewer")
 library("methylKit")
 library("GenomicRanges")
 library("genomation")
+library("stringr")
 
 source("./R/utils.R")
 source("./R/mainQC.R")
@@ -14,7 +15,7 @@ source("./R/mainQC.R")
 #########################################
 CytoMethInfo <- function(){
   cat("#######################################\n")
-  cat("### CytoMeth ver 0.9.11 (30-08-2019) ###\n")
+  cat("### CytoMeth ver 0.9.12 (13-09-2019) ###\n")
   cat("#######################################\n")
   cat("### Created by Michal Draminski, Agata Dziedzic, Rafal Guzik, Bartosz Wojtas and Michal J. Dabrowski ###\n")
   cat("### Computational Biology Lab, Polish Academy of Science, Warsaw, Poland ###\n")
@@ -200,16 +201,6 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     if(!checkIfFileExists(trimmomatic_out_logfile)) return(F)
     if(!checkLog(trimmomatic_out_logfile, "Completed successfully", 'Trimming')) return(F)
     
-    #Create QC_report
-    sampleQC <- list()
-    #Add to QC_report
-    sampleQC$Sample_ID <- sample_basename
-    trim_log <- readLines(trimmomatic_out_logfile)
-    trim_log <- strsplit(trim_log[startsWith(trim_log, "Input Read Pairs")], " ")
-    sampleQC$Input_read_pairs <- as.numeric(trim_log[[1]][4])
-    sampleQC$Read_Pairs_Surviving_trimming <- as.numeric(trim_log[[1]][7])
-    sampleQC$Prc_Read_Pairs_Surviving_trimming <- as.numeric(substr((trim_log[[1]])[8], 2, nchar((trim_log[[1]][8]))-2))
-    
     ###############################
     #######  BSMAP - mapping #######
     mapping_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mapping","temp_results_dirs"], sample_basename)
@@ -377,16 +368,6 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     if(!checkLog(rmdups_logfile, "MarkDuplicates done. Elapsed time:", 'MarkDuplicates - bottom')) return(F)
     
     ###############################
-    #Add to QC_report
-    top_dup <- readLines(file.path(paste0(rmdups_result_file,".top.rmdups_metrics.txt")))
-    top_dup <-  strsplit(top_dup[startsWith(top_dup, "SAMPLE")], "\t")
-    sampleQC$Prc_duplicated_reads_top <- as.numeric(top_dup[[1]][9])*100
-    
-    bottom_dup <- readLines(file.path(paste0(rmdups_result_file,".bottom.rmdups_metrics.txt")))
-    bottom_dup <-  strsplit(bottom_dup[startsWith(bottom_dup, "SAMPLE")], "\t")
-    sampleQC$Prc_duplicated_reads_bottom <- as.numeric(bottom_dup[[1]][9])*100
-    
-    ###############################
     ######  bamtools - merge
     if(config$overwrite_results | !(file.exists(paste0(rmdups_result_file,".rmdups.bam")))) {
       src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " merge", 
@@ -485,17 +466,6 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     if(!checkIfFileExists(paste0(basic_mapping_metrics_result_file,"_basic_mapping_metrics.txt"))) return(F)
     
     ###############################
-    #Add to QC report
-    metrics <- readLines(paste0(basic_mapping_metrics_result_file,"_basic_mapping_metrics.txt"))
-    metrics <- strsplit(metrics[!startsWith(metrics, "#")],'\t')
-    sampleQC$Number_of_reads_after_removing_duplicates <- as.numeric(metrics[[5]][2])
-    
-    metrics <- readLines(flagstat_result_file)
-    metrics <- strsplit(metrics[1]," ")
-    sampleQC$Number_of_reads_after_filtering <- as.numeric(metrics[[1]][1])
-    sampleQC$Prc_passed_filtering_step <- as.numeric(sampleQC$Number_of_reads_after_filtering)/as.numeric(sampleQC$Number_of_reads_after_removing_duplicates)*100
-    
-    ###############################
     ######  picard - Insert Size
     insert_size_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="insert_size","temp_results_dirs"], sample_basename)
     
@@ -532,10 +502,12 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     }
     
     if(!checkIfFileExists(paste0(on_target_result_file,"_on_target_reads"))) return(F)
-    
-    #Add to QC report
-    sampleQC$Number_of_on_target_reads <- getLinesNumber(paste0(on_target_result_file,"_on_target_reads"))
-    sampleQC$Prc_of_on_target_reads <- sampleQC$Number_of_on_target_read/as.numeric(sampleQC$Number_of_reads_after_removing_duplicates)*100
+
+    ###############################
+    #save result SAMPLE_on_target_reads.txt file
+    number_of_on_target_reads <- getLinesNumber(paste0(on_target_result_file,"_on_target_reads"))
+    on_target_params <- list(number_of_on_target_reads = as.character(number_of_on_target_reads))
+    yaml::write_yaml(on_target_params, paste0(on_target_result_file,"_on_target_reads.txt"))
 
     ###############################
     ######  gatk - DepthOfCoverage
@@ -563,14 +535,6 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     if(!checkIfFileExists(paste0(depth_of_cov_result_file,"_gatk_target_coverage"))) return(F)
     if(!checkIfFileExists(paste0(depth_of_cov_result_file,"_gatk_target_coverage.sample_summary"))) return(F)
     if(!checkIfFileExists(gatk_depth_logfile)) return(F)
-    
-    ###############################
-    #Add to QC report
-    depth_summary  <- readLines(paste0(depth_of_cov_result_file,"_gatk_target_coverage.sample_summary"))
-    depth_summary  <- strsplit(depth_summary, '\t')
-    sampleQC$Mean_coverage <- as.numeric(depth_summary[[2]][3])
-
-    print(qc2dataframe(sampleQC))
     
     ###############################
     ######  python - methratio (BSMAP) 
@@ -609,15 +573,17 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     print(head(methyl_result_data[methyl_result_data$C_count > 0,]))
     print(paste0("Number of > 1 C_count: ", length(methyl_result_data$C_count[methyl_result_data$C_count > 1])))
     print(head(methyl_result_data[methyl_result_data$C_count > 1,]))
-    if(nrow(methyl_result_data)==0){
-      print(paste0("Error! File: ", paste0(methyl_result_file,".methylation_results.txt")," is empty!"))
+    
+    if(nrow(methyl_result_data) == 0){
+      print(paste0("Error! File: ", paste0(methyl_result_file, ".methylation_results.txt")," is empty!"))
       print(paste0("QC Report of the Sample: ",sample_basename))
+      sampleQC <- getSampleQCReport(sample_basename, config, save = F)
       print(qc2dataframe(sampleQC))
       return(F)
     }
     print(paste0("Saving the file: ",methyl_result_file,".methylation_results.bed"))
     data.table::fwrite(methyl_result_data, file=paste0(methyl_result_file,".methylation_results.bed"), quote=FALSE, sep='\t', row.names = F)
-    
+
     ###############################
     ######  BEDTools - intersect capture region
     if(config$overwrite_results | !(file.exists(paste0(methyl_result_file,".methylation_results.bed.panel")))) {
@@ -626,7 +592,6 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                             " -b ",file.path(config$ref_data_path, config$ref_data_intervals_file),
                             " -u > ",paste0(methyl_result_file,".methylation_results.bed.panel"))
       runSystemCommand(myAppName, 'BEDTools', 'intersect - capture region', src_command, config$verbose)
-      
     }else{
       skipProcess(myAppName, 'BEDTools', 'intersect - capture region',
                   file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"],"/"))
@@ -634,48 +599,11 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     
     if(!checkIfFileExists(paste0(methyl_result_file,".methylation_results.bed.panel"))) return(F)
     
-    ###############################
-    ######  Calculate conversion efficiency
-    methyl_res_panel_df <- data.table::fread(paste0(methyl_result_file,".methylation_results.bed.panel"), header = F, sep = '\t')
-    
-    colnames(methyl_res_panel_df) <- c("chr","start","end","strand","context","ratio","eff_CT_count","C_count", "CT_count")
-    control <- methyl_res_panel_df[methyl_res_panel_df$chr=='NC_001416',]
-    sampleQC$Number_of_Cs_in_control <- nrow(control)
-    conversion_eff <- c((1-sum(control$C_count)/sum(control$CT_count))*100)
-    sampleQC$Conversion_eff <- conversion_eff
-    
-    #Add to QC report
-    methyl_res_panel_df_no_control <- methyl_res_panel_df[methyl_res_panel_df$chr!='NC_001416',]
-    sampleQC$Number_of_Cs_in_panel <- nrow(methyl_res_panel_df_no_control)
-    
-    methyl_res_panel_df_no_control_CpG <-methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context=='CG',]
-    sampleQC$Number_of_Cs_in_panel_CpG <- nrow(methyl_res_panel_df_no_control_CpG)
-    
-    methyl_res_panel_df_no_control_nonCpG <-methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context!='CG',]
-    sampleQC$Number_of_Cs_in_panel_non_CpG <- nrow(methyl_res_panel_df_no_control_nonCpG)
-    
-    methyl_res_panel_df_no_control_nonCpG_min10 <-methyl_res_panel_df_no_control_nonCpG[methyl_res_panel_df_no_control_nonCpG$eff_CT_count>=10,]
-    sampleQC$Number_of_Cs_in_panel_non_CpG_cov_min10 <- nrow(methyl_res_panel_df_no_control_nonCpG_min10)
-    
-    methyl_res_panel_df_no_control_CpG_min10 <- methyl_res_panel_df_no_control_CpG[methyl_res_panel_df_no_control_CpG$eff_CT_count>=10,]
-    sampleQC$Number_of_Cs_in_panel_CpG_cov_min10 <- nrow(methyl_res_panel_df_no_control_CpG_min10)
-    
-    methyl_res_panel_df_no_control_CpG_max9 <- methyl_res_panel_df_no_control_CpG[methyl_res_panel_df_no_control_CpG$eff_CT_count<10,]
-    sampleQC$Number_of_Cs_in_panel_CpG_cov_max9 <- nrow(methyl_res_panel_df_no_control_CpG_max9)
-    
-    sampleQC$Prc_of_Cs_in_panel_CpG_cov_min10 <-  nrow(methyl_res_panel_df_no_control_CpG_min10)/sum(nrow(methyl_res_panel_df_no_control_CpG_max9)+nrow(methyl_res_panel_df_no_control_CpG_min10))*100
-    sampleQC$Prc_of_Cs_in_panel_CpG_cov_max9 <- nrow(methyl_res_panel_df_no_control_CpG_max9)/sum(nrow(methyl_res_panel_df_no_control_CpG_max9)+nrow(methyl_res_panel_df_no_control_CpG_min10))*100
-    
-    
-    #Write yaml report
-    yaml_report_file <- file.path(config$results_path,"QC_report",paste0(sample_basename,"_QC_summary.yml"))
-    print(paste0("Saving report file to: ", yaml_report_file))
-    print(paste0(sample_basename, " - QC report: "))
-    print(data.frame(value=unlist(sampleQC)))
-    yaml::write_yaml(sampleQC, yaml_report_file)
     # Prepare input for methylkit
-    data.table::fwrite(methyl_res_panel_df_no_control_CpG_min10, file=paste0(methyl_result_file,".methylation_results.bed.panel.no_control.CpG_min10"), quote=FALSE, sep='\t', row.names = F)
-    data.table::fwrite(methyl_res_panel_df_no_control_nonCpG_min10, file=paste0(methyl_result_file,".methylation_results.bed.panel.no_control.non_CpG_min10"), quote=FALSE, sep='\t', row.names = F)
+    methyl_result_data <- readMethylResultData(paste0(methyl_result_file,".methylation_results.bed.panel"))
+    methylSplitResult <- getMethylSplitByCT_Count(methyl_result_data, config$ref_control_sequence_name, 10)
+    data.table::fwrite(methylSplitResult$methyl_res_panel_df_no_control_CpG, file=paste0(methyl_result_file,".methylation_results.bed.panel.no_control.CpG_min10"), quote=FALSE, sep='\t', row.names = F)
+    data.table::fwrite(methylSplitResult$methyl_res_panel_df_no_control_nonCpG, file=paste0(methyl_result_file,".methylation_results.bed.panel.no_control.non_CpG_min10"), quote=FALSE, sep='\t', row.names = F)
     
     #Remove Temp files
     if(config$clean_tmp_files){
@@ -684,7 +612,8 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                         paste0(trimming_result_r2_file, c("_trimmed.fq","_unpaired.fq")),
                         paste0(mapping_result_file, c(".sam",".bam",".top.bam",".bottom.bam",".TAG_ZS_++.bam",".TAG_ZS_+-.bam",".TAG_ZS_-+.bam",".TAG_ZS_--.bam",".top.bam.sorted",".bottom.bam.sorted")),
                         paste0(rmdups_result_file, c(".top.rmdups.bam",".bottom.rmdups.bam",".top.rmdups.bai",".bottom.rmdups.bai",".rmdups.bam")),
-                        paste0(filtered_result_file,".filtered.bam"), paste0(on_target_result_file,"_on_target_reads"),
+                        paste0(filtered_result_file,".filtered.bam"), 
+                        paste0(on_target_result_file,"_on_target_reads"),
                         paste0(methyl_result_file, c(".methylation_results.txt",".methylation_results.bed")),
                         paste0(depth_of_cov_result_file, c("_gatk_target_coverage",
                                                            "_gatk_target_coverage.sample_cumulative_coverage_counts",
@@ -696,8 +625,14 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     }
     
     full_stop_time <- Sys.time()
+    processing_time <- format(full_stop_time - full_start_time, digits=3)
+    
+    sampleQC <- getSampleQCSummary(sample_basename, config, save = T)
+    print(paste0(sample_basename, " - QC report: "))
+    print(qc2dataframe(sampleQC))
+    
     cat('#############################################\n')
-    cat(paste0("Processing the sample - '", sample_basename, "' is finished. [", format(full_stop_time - full_start_time, digits=3) ,"]\n"))
+    cat(paste0("Processing the sample - '", sample_basename, "' is finished. [", processing_time ,"]\n"))
     cat('#############################################\n\n')
   }
   
