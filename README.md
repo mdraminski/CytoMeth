@@ -173,13 +173,21 @@ This file is also created during installation process.
 
 
 ### Reference Files
-Reference files required by CytoMeth are automatically installed by '*install.sh*' script. If you would like to download them manually plese run the following commands in a terminal window:
+Reference files required by CytoMeth are automatically installed by '*install.data.sh*' script. If you would like to download them manually plese run the following commands in a terminal window:
 
 ```bash
 wget -c -O ./RefData/CytoMethRefData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/CytoMethRefData.zip;
 unzip ./RefData/CytoMethRefData.zip;
 ```
 All reference files are located in */RefData/* directory by default.
+
+### Basic Example Data
+Basic E
+```bash
+wget -c -O ./input/small_FAKE03_R1.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth/input/small_FAKE03_R1.fastq;
+wget -c -O ./input/small_FAKE03_R2.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth/input/small_FAKE03_R2.fastq;
+```
+
 
 ## The Docker
 CytoMeth project is also available as a docker. To build your own docker use *build* command and after the successful creation the docker is ready to run. Pleaese notice building of the docker may take tens of minutes because the proper environment must be created from the scratch, however it must be done only once.
@@ -307,6 +315,7 @@ Rscript R/CytoMethQC.R
 ```
 The script above creates summary csv file that aggregates quality measures values for all processed samples. It also creates two barplots: overall coverage report plot, CpG vs nonCpG frequency report. The methylation results can be also visualised in respect to specific genomic regions.
 We annotate the level of methylation to CpG islands, promoters, intergenic regions, introns and exons and provide proper plots in '*results/QC_report*' directory.
+
 
 You can run both phases by running '*CytoMeth.sh*' bash script in a terminal window:
 ```bash
