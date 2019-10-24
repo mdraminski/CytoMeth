@@ -15,7 +15,7 @@ source("./R/mainQC.R")
 #########################################
 CytoMethInfo <- function(){
   cat("#######################################\n")
-  cat("### CytoMeth ver 0.9.12 (13-09-2019) ###\n")
+  cat("### CytoMeth ver 0.9.13 (17-10-2019) ###\n")
   cat("#######################################\n")
   cat("### Created by Michal Draminski, Agata Dziedzic, Rafal Guzik, Bartosz Wojtas and Michal J. Dabrowski ###\n")
   cat("### Computational Biology Lab, Polish Academy of Science, Warsaw, Poland ###\n")
@@ -76,7 +76,7 @@ CytoMeth <- function(config, file_r1 = NULL, file_r2 = NULL){
 #########################################
 # CytoMethSingleSample
 #########################################
-#config <- conf; file_r1 <-"/home/mdraminski/workspace/CytoMeth/input_test/small_FAKE03_R1.fastq"; file_r2 <- "/home/mdraminski/workspace/CytoMeth/input_test/small_FAKE03_R2.fastq";
+#config <- conf; file_r1 <-"/home/mdraminski/workspace/CytoMeth/input_test/small_FAKE01_R1.fastq"; file_r2 <- "/home/mdraminski/workspace/CytoMeth/input_test/small_FAKE01_R2.fastq";
 #config <- conf; file_r1 <-"/home/mdraminski/workspace/CytoMeth/input/DA01_R1.fastq"; file_r2 <- "/home/mdraminski/workspace/CytoMeth/input/DA01_R2.fastq";
 CytoMethSingleSample <- function(config, file_r1, file_r2){
   #show vignette
@@ -97,7 +97,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     picard_parser <- " -Dpicard.useLegacyParser=true "
   }
   
-  myAppName <- "### CytoMeth ### "  
+  myAppName <- "### CytoMeth ### "
   full_start_time <- Sys.time()
   
   if(!file.exists(file_r1)){
@@ -568,42 +568,56 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     print(paste0("Reading the file: ", methyl_result_file,".methylation_results.txt"))
     methyl_result_data <- data.table::fread(paste0(methyl_result_file,".methylation_results.txt"), header = T, sep = '\t')
     methyl_result_data$end <- methyl_result_data$pos
-    methyl_result_data <- methyl_result_data[,c("chr","pos","end","strand","context","ratio","eff_CT_count","C_count", "CT_count")]
-    print(paste0("Number of non zero C_count: ", length(methyl_result_data$C_count[methyl_result_data$C_count > 0])))
-    print(head(methyl_result_data[methyl_result_data$C_count > 0,]))
-    print(paste0("Number of > 1 C_count: ", length(methyl_result_data$C_count[methyl_result_data$C_count > 1])))
-    print(head(methyl_result_data[methyl_result_data$C_count > 1,]))
-    
+    methyl_result_data <- methyl_result_data[,c("chr","pos","end","context","ratio","strand","eff_CT_count","C_count", "CT_count")]
+    names(methyl_result_data) <- getMethylDataHeader(version = 2, size = 9)
+    #head(methyl_result_data)
+    #summary(methyl_result_data)
     if(nrow(methyl_result_data) == 0){
       print(paste0("Error! File: ", paste0(methyl_result_file, ".methylation_results.txt")," is empty!"))
-      print(paste0("QC Report of the Sample: ",sample_basename))
-      sampleQC <- getSampleQCReport(sample_basename, config, save = F)
+      print(paste0("QC Report of the Sample: ", sample_basename))
+      sampleQC <- getSampleQCSummary(sample_basename, config, save = F)
       print(qc2dataframe(sampleQC))
       return(F)
+    }else{
+      print(paste0("Number of numCs > 0: ", length(methyl_result_data$numCs[methyl_result_data$numCs > 0])))
+      print(head(methyl_result_data[methyl_result_data$numCs > 0,],5))
+      print(paste0("Number of numCs > 1: ", length(methyl_result_data$numCs[methyl_result_data$numCs > 1])))
+      print(head(methyl_result_data[methyl_result_data$numCs > 1,],5))
     }
-    print(paste0("Saving the file: ",methyl_result_file,".methylation_results.bed"))
-    data.table::fwrite(methyl_result_data, file=paste0(methyl_result_file,".methylation_results.bed"), quote=FALSE, sep='\t', row.names = F)
+    print(paste0("Saving the file: ",methyl_result_file,".methylation_results.prime.bed"))
+    data.table::fwrite(methyl_result_data, file=paste0(methyl_result_file,".methylation_results.prime.bed"), quote=FALSE, sep='\t', row.names = F, col.names = F)
 
     ###############################
-    ######  BEDTools - intersect capture region
-    if(config$overwrite_results | !(file.exists(paste0(methyl_result_file,".methylation_results.bed.panel")))) {
-      src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
-                            " intersect -bed -abam ",  paste0(methyl_result_file,".methylation_results.bed"), 
-                            " -b ",file.path(config$ref_data_path, config$ref_data_intervals_file),
-                            " -u > ",paste0(methyl_result_file,".methylation_results.bed.panel"))
-      runSystemCommand(myAppName, 'BEDTools', 'intersect - capture region', src_command, config$verbose)
+    ######  BEDTools - intersect capture region (only if file is defined)
+    if(str_trim(config$ref_data_intervals_file) != ''){
+      if(config$overwrite_results | !(file.exists(paste0(methyl_result_file,".methylation_results.bed")))) {
+        src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
+                              " intersect -bed -abam ",  paste0(methyl_result_file,".methylation_results.prime.bed"), 
+                              " -b ",file.path(config$ref_data_path, config$ref_data_intervals_file),
+                              " -u > ",paste0(methyl_result_file,".methylation_results.bed"))
+        runSystemCommand(myAppName, 'BEDTools', 'intersect - capture region', src_command, config$verbose)
+      }else{
+        skipProcess(myAppName, 'BEDTools', 'intersect - capture region',
+                    file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"],"/"))
+      }
+      if(!checkIfFileExists(paste0(methyl_result_file,".methylation_results.bed"))) return(F)
     }else{
-      skipProcess(myAppName, 'BEDTools', 'intersect - capture region',
-                  file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"],"/"))
+      file.rename(paste0(methyl_result_file,".methylation_results.prime.bed"), paste0(methyl_result_file,".methylation_results.bed"))
     }
     
-    if(!checkIfFileExists(paste0(methyl_result_file,".methylation_results.bed.panel"))) return(F)
-    
-    # Prepare input for methylkit
-    methyl_result_data <- readMethylResultData(paste0(methyl_result_file,".methylation_results.bed.panel"))
-    methylSplitResult <- getMethylSplitByCT_Count(methyl_result_data, config$ref_control_sequence_name, 10)
-    data.table::fwrite(methylSplitResult$methyl_res_panel_df_no_control_CpG, file=paste0(methyl_result_file,".methylation_results.bed.panel.no_control.CpG_min10"), quote=FALSE, sep='\t', row.names = F)
-    data.table::fwrite(methylSplitResult$methyl_res_panel_df_no_control_nonCpG, file=paste0(methyl_result_file,".methylation_results.bed.panel.no_control.non_CpG_min10"), quote=FALSE, sep='\t', row.names = F)
+    #finish the methylation file and save rds version
+    methyl_result_final_file <- paste0(methyl_result_file,".methylation_results.bed")
+    methyl_result_data <- readMethResult(methyl_result_final_file, version = 2)
+    methyl_result_data$posCs <- methyl_result_data$start 
+    # lets make end = start
+    methyl_result_data$end <- methyl_result_data$start
+    # for positive strand end++ (end = start + 1)
+    methyl_result_data$end[methyl_result_data$strand == '+'] <- methyl_result_data$end[methyl_result_data$strand == '+'] + 1
+    # for negative strand start-- (end = start - 1)
+    methyl_result_data$start[methyl_result_data$strand == '-'] <- methyl_result_data$start[methyl_result_data$strand == '-'] - 1
+    data.table::fwrite(methyl_result_data, methyl_result_final_file, quote=FALSE, sep='\t', row.names = F, col.names = F)
+    #save rds file
+    saveRDS(methyl_result_data, gsub(".bed",".rds", methyl_result_final_file))
     
     #Remove Temp files
     if(config$clean_tmp_files){
@@ -614,7 +628,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
                         paste0(rmdups_result_file, c(".top.rmdups.bam",".bottom.rmdups.bam",".top.rmdups.bai",".bottom.rmdups.bai",".rmdups.bam")),
                         paste0(filtered_result_file,".filtered.bam"), 
                         paste0(on_target_result_file,"_on_target_reads"),
-                        paste0(methyl_result_file, c(".methylation_results.txt",".methylation_results.bed")),
+                        paste0(methyl_result_file, c(".methylation_results.txt",".methylation_results.prime.bed")),
                         paste0(depth_of_cov_result_file, c("_gatk_target_coverage",
                                                            "_gatk_target_coverage.sample_cumulative_coverage_counts",
                                                            "_gatk_target_coverage.sample_interval_summary",
@@ -627,7 +641,7 @@ CytoMethSingleSample <- function(config, file_r1, file_r2){
     full_stop_time <- Sys.time()
     processing_time <- format(full_stop_time - full_start_time, digits=3)
     
-    sampleQC <- getSampleQCSummary(sample_basename, config, save = T)
+    sampleQC <- getSampleQCSummary(sample_basename, config, save = T, result_format = 'bed')
     print(paste0(sample_basename, " - QC report: "))
     print(qc2dataframe(sampleQC))
     

@@ -1,8 +1,8 @@
 ################################
 ###### get and save SAMPLE_QC_summary ####
-#config <- conf; sample_basename <- "DA01";
-getSampleQCSummary <- function(sample_basename, config, save = T){
-  
+#config <- conf; save = F; result_format = 'bed'; sample_basename <- "DA01"; sample_basename <- "small_FAKE01"; 
+getSampleQCSummary <- function(sample_basename, config, save = T, result_format = c('bed','rds')){
+  result_format <- checkFormat(result_format, supported = c('bed','rds'))
   config_tools <- read.csv(file.path(config$tools_path, config$tools_config), stringsAsFactors = FALSE)
   sampleQC <- list()
   sampleQC$Sample_ID <- sample_basename
@@ -93,30 +93,29 @@ getSampleQCSummary <- function(sample_basename, config, save = T){
   
   ### Calculate conversion efficiency
   methyl_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"], sample_basename)
-  methyl_result_data <- readMethylResultData(paste0(methyl_result_file,".methylation_results.bed.panel"))
-  methyl_result_data <- data.frame(methyl_result_data)
+  methyl_result_data <- as.data.frame(readMethResult(paste0(methyl_result_file,".methylation_results.", result_format),version=2))
+  #head(methyl_result_data)
   if(!is.null(methyl_result_data)){
     control <- methyl_result_data[methyl_result_data$chr == config$ref_control_sequence_name,]
     sampleQC$Number_of_Cs_in_control <- nrow(control)
-    conversion_eff <- c(100 * (1-sum(control$C_count)/sum(control$CT_count)))
+    conversion_eff <- c(100 * (1-sum(control$numCs)/sum(control$numTs)))
     sampleQC$Conversion_eff <- conversion_eff
     
     #Add to QC Sample report
     methyl_res_panel_df_no_control <- methyl_result_data[methyl_result_data$chr != config$ref_control_sequence_name,]
     sampleQC$Number_of_Cs_in_panel <- nrow(methyl_res_panel_df_no_control)
     
-    methyl_res_panel_df_no_control_CpG <- methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context=='CG',]
+    methyl_res_panel_df_no_control_CpG <- methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context %in% c('CG'),]
     sampleQC$Number_of_Cs_in_panel_CpG <- nrow(methyl_res_panel_df_no_control_CpG)
     
-    methyl_res_panel_df_no_control_nonCpG <- methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context!='CG',]
+    methyl_res_panel_df_no_control_nonCpG <- methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context %in% c('CHG','CHH'),]
     sampleQC$Number_of_Cs_in_panel_non_CpG <- nrow(methyl_res_panel_df_no_control_nonCpG)
     
-    methylSplitResult <- getMethylSplitByCT_Count(methyl_result_data, config$ref_control_sequence_name, 10)
-    sampleQC$Number_of_Cs_in_panel_CpG_cov_min10 <- nrow(methylSplitResult$methyl_res_panel_df_no_control_CpG)
-    sampleQC$Number_of_Cs_in_panel_non_CpG_cov_min10 <- nrow(methylSplitResult$methyl_res_panel_df_no_control_nonCpG)
-    
-    #methyl_res_panel_df_no_control_CpG_max9 <- methyl_res_panel_df_no_control_CpG[methyl_res_panel_df_no_control_CpG$eff_CT_count<10,]
-    sampleQC$Number_of_Cs_in_panel_CpG_cov_max9 <- sum(methyl_res_panel_df_no_control_CpG$eff_CT_count<10)
+    sampleQC$Number_of_Cs_in_panel_CpG_cov_min10 <- nrow(filterMethResult(methyl_result_data, config$ref_control_sequence_name, context = c('CG'), min_coverage = 10))
+    sampleQC$Number_of_Cs_in_panel_non_CpG_cov_min10 <- nrow(filterMethResult(methyl_result_data, config$ref_control_sequence_name, context = c('CHG','CHH'), min_coverage = 10))
+
+    #methyl_res_panel_df_no_control_CpG_max9 <- methyl_res_panel_df_no_control_CpG[methyl_res_panel_df_no_control_CpG$coverage<10,]
+    sampleQC$Number_of_Cs_in_panel_CpG_cov_max9 <- sum(methyl_res_panel_df_no_control_CpG$coverage<10)
     
     sampleQC$Prc_of_Cs_in_panel_CpG_cov_min10 <- 100 * (sampleQC$Number_of_Cs_in_panel_CpG_cov_min10/sampleQC$Number_of_Cs_in_panel_CpG)
     sampleQC$Prc_of_Cs_in_panel_CpG_cov_max9 <- 100 * (sampleQC$Number_of_Cs_in_panel_CpG_cov_max9/sampleQC$Number_of_Cs_in_panel_CpG)
@@ -233,36 +232,6 @@ plotSitesCovBy10CpGnonCpG <- function(qc_summary, config, pal = brewer.pal(8, "D
   return(gg)
 }
 
-##############################################
-######## Read data using MethylKit ############
-readMethData <- function(config, context = c('CpG', 'non-CpG')){
-  
-  result_dir <- file.path(config$results_path, "methyl_results")
-  if(context[1] == 'CpG'){
-    file_sufix <- "CpG_min10"
-    methcontext <- "CpG"
-  }else{
-    file_sufix <- "non_CpG_min10"
-    methcontext <- c("CpH", "CHH", "CHG")
-  }
-  
-  result_files <- list.files(result_dir, pattern = paste0("\\.", file_sufix), full.names = T)
-  sample_id <- lapply(strsplit(basename(result_files), '\\.'), function(x){x[1]})
-  
-  methData <- methylKit::methRead(as.list(result_files),
-                                  sample.id = sample_id,
-                                  treatment = c(rep(0, length(sample_id))), # 0/1 control/test samples
-                                  assembly = "hg38",
-                                  header = TRUE,
-                                  context = methcontext,
-                                  resolution = "base",
-                                  pipeline = list(fraction=TRUE, chr.col=1, start.col=2, end.col=3, coverage.col=7, strand.col=4, freqC.col=6))
-  
-  attr(methData, 'context') <- context
-  
-  return(methData)
-}
-
 ####################################################
 ###### Plot Basic MethylKit stats for one sample #######
 plotSingleMethStats <- function(single_meth_data){
@@ -333,10 +302,10 @@ plotBetaValuesSummary <- function(meth_data, config, sample_size = 100000, pal =
   
   data_context <- attr(meth_data, 'context')
   plot_title <- paste0("Beta values of ", data_context, " sites across samples")
-  
-  percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage } )
+  head(meth_data)
+  percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage})
   methyl_levels <- list()
-  i =1
+  i = 1
   for (i in 1:length(meth_data)){
     methyl_levels[[i]] <- data.frame(sample.id = meth_data[[i]]@sample.id, 
                                      beta_values = as.numeric(percentage_meth[[i]]),

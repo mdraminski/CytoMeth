@@ -124,8 +124,11 @@ checkRequiredFiles <- function(config){
     file.path(config$ref_data_path, config$ref_data_sequence_file),
     file.path(config$ref_data_path, paste0(config$ref_data_sequence_file,".fai")),
     file.path(config$ref_data_path, paste0(tools::file_path_sans_ext(config$ref_data_sequence_file),".dict")),
-    file.path(config$ref_data_path, config$ref_data_intervals_file),
     file.path(config$tools_path, config$trimmomatic_adapter))
+  
+  if(str_trim(config$ref_data_intervals_file) != ''){
+    cytoMethRefFiles <- c(cytoMethRefFiles, file.path(config$ref_data_path, config$ref_data_intervals_file))
+  }
   
   for(i in 1:length(cytoMethRefFiles)){
     if(!file.exists(cytoMethRefFiles[i])){
@@ -147,6 +150,18 @@ checkIfFileExists <- function (file){
   }else{
     return(T)
   }
+}
+
+#########################################
+# checkFormat
+#########################################
+checkFormat <- function(format, supported = c('bed','rds')){
+  format <- tolower(format[1])
+  if(!tolower(format) %in% supported){
+    warning(paste0("Unsupported format: '", format, "'. Trying to read from 'bed' files."))
+    format <- 'bed'
+  }
+  return(format)
 }
 
 #########################################
@@ -273,31 +288,110 @@ qc2dataframe <- function(qc_report){
 }
 
 ###############################
-#readMethylResultData
+#getMethylDataHeader
 ###############################
-readMethylResultData <- function(methyl_result_file){
+getMethylDataHeader <- function(version = c(1,2), size = 9){
+  methHeader <- switch(version[1],
+                         c("chr","start","end","strand","context","betaVal","coverage", "numCs", "numTs"),
+                         c("chr","start","end","context","betaVal","strand","coverage", "numCs", "numTs", "posCs"))
+  return(methHeader[1:size])
+}
+
+###############################
+#readMethResult
+###############################
+readMethResult <- function(methyl_result_file, sample_name = NULL, version = c(1,2)){
   methyl_data <- NULL
   if(checkIfFileExists(methyl_result_file)){
-    methyl_data <- data.table::fread(methyl_result_file, header = F, sep = '\t')
-    if(nrow(methyl_data) > 0){
-      colnames(methyl_data) <- c("chr","start","end","strand","context","ratio","eff_CT_count","C_count", "CT_count")
+    if(endsWith(tolower(methyl_result_file),".rds")){
+      methyl_data <- readRDS(methyl_result_file)
     }else{
-      methyl_data <- NULL    
+      methyl_data <- data.table::fread(methyl_result_file, header = F, sep = '\t')
+      colnames(methyl_data) <- getMethylDataHeader(version, size = ncol(methyl_data))
     }
+    methyl_data <- as.data.frame(methyl_data)
+    methyl_data <- methyl_data[,getMethylDataHeader(2, size = ncol(methyl_data))]
+  }else{
+    methyl_data <- NULL    
   }
+  
+  if(is.null(sample_name)){
+    sample_name <- unlist(str_split(basename(methyl_result_file), "\\."))[1]
+  }
+  attr(methyl_data, 'sample_name') <- sample_name
+  
   return(methyl_data)
 }
 
 ###############################
-# getMethylSplitByCT_Count
+# filterMethResult
 ###############################
 # methyl_data <- methyl_result_data
-# ref_sequence_name <- config$ref_sequence_name
-getMethylSplitByCT_Count <- function(methyl_data, ref_sequence_name, eff_CT_count = 10){
+# methyl_data <- methData[[i]]
+# ref_sequence_name <- config$ref_control_sequence_name
+filterMethResult <- function(methyl_data, ref_sequence_name = NULL, context = c("CG","CHG","CHH"), context_label = NULL, min_coverage = 10){
   methyl_data <- as.data.frame(methyl_data)
-  methyl_data <- methyl_data[methyl_data$chr != ref_sequence_name,]
-  retlist <- list(methyl_res_panel_df_no_control_CpG = NA, methyl_res_panel_df_no_control_nonCpG = NA)
-  retlist$methyl_res_panel_df_no_control_CpG <- methyl_data[methyl_data$context=='CG' & methyl_data$eff_CT_count >= eff_CT_count,]
-  retlist$methyl_res_panel_df_no_control_nonCpG <- methyl_data[methyl_data$context!='CG' & methyl_data$eff_CT_count >= eff_CT_count,]
-  return(retlist)
+  if(!is.null(ref_sequence_name)){
+    methyl_data <- methyl_data[methyl_data$chr != ref_sequence_name,]
+  }
+  methyl_data <- methyl_data[methyl_data$context %in% context & methyl_data$coverage >= min_coverage,]
+
+  if(is.null(context_label)){
+    context_label <- paste0(context, collapse = ",")
+  }
+  attr(methyl_data, "context") <- context_label
+  attr(methyl_data, "min_coverage") <- min_coverage
+  
+  return(methyl_data)
+}
+
+###############################
+# convertMethResult
+###############################
+#methyl_data <- mymeth
+convertMethResult <- function(methyl_data, assembly='hg38', resolution='base'){
+  methyl_data <- new("methylRaw", methyl_data %>% dplyr::select(-context, -betaVal) %>% data.table(), 
+      sample.id=attr(methyl_data, 'sample_name'), assembly=assembly, context=attr(methyl_data, "context"), resolution=resolution)
+  return(methyl_data)
+}
+
+##############################################
+######## Read data using MethylKit ############
+readMethData <- function(config, context = c("CG","CHG","CHH"), context_label = NULL, min_coverage = 10, result_format = c('bed','rds')){
+  result_format <- checkFormat(result_format, supported = c('bed','rds'))
+  result_dir <- file.path(config$results_path, "methyl_results")
+  result_files <- list.files(result_dir, full.names = T)
+  result_files <- result_files[endsWith(tolower(result_files), paste0('.methylation_results.', result_format))]
+  sample_id <- lapply(strsplit(basename(result_files), '\\.'), function(x){x[1]})
+  
+  if(is.null(context_label)){
+    context_label <- paste0(context, collapse = ",")
+  }
+  
+  # read function from methylKit - it does not filter by context 
+  # methData <- methylKit::methRead(as.list(result_files),
+  #                                 sample.id = sample_id,
+  #                                 treatment = c(rep(0, length(sample_id))), # 0/1 control/test samples
+  #                                 assembly = "hg38",
+  #                                 header = TRUE,
+  #                                 context = methcontext,
+  #                                 resolution = "base",
+  #                                 pipeline = list(fraction=TRUE, chr.col=1, start.col=2, end.col=3, coverage.col=7, strand.col=4, freqC.col=6, context.col=5),
+  #                                 mincov = min_coverage)
+  # #filtering ref_control_sequence_name
+  # methData <- lapply(methData, function(x) {x[x$chr != config$ref_control_sequence_name,]})
+
+  methData <- list()
+  for(i in 1:length(result_files)){
+    cat(paste0('Reading file: ', result_files[i], '\n'))
+    methData[[i]] <- readMethResult(result_files[i], version = 2)
+    methData[[i]] <- filterMethResult(methData[[i]], ref_sequence_name = config$ref_control_sequence_name, context, context_label, min_coverage)
+    methData[[i]] <- convertMethResult(methData[[i]])
+  }
+  
+  methData <- new("methylRawList", methData, treatment = c(rep(0, length(sample_id))))
+  attr(methData, 'context') <- context_label
+  attr(methData, 'mincov') <- min_coverage
+  
+  return(methData)
 }

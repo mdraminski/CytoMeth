@@ -1,6 +1,10 @@
 CytoMeth - Changes
 =============
 
+## Version 0.9.13
+* output files bed format - finalized structure
+* new output files rds format
+
 ## Version 0.9.12
 * generation of QCSummary is now independet process
 * plot plotBetaValuesSummary supports data sampling and non-CpG context
