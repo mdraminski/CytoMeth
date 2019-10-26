@@ -329,13 +329,16 @@ readMethResult <- function(methyl_result_file, sample_name = NULL, version = c(1
 # methyl_data <- methyl_result_data
 # methyl_data <- methData[[i]]
 # ref_sequence_name <- config$ref_control_sequence_name
-filterMethResult <- function(methyl_data, ref_sequence_name = NULL, context = c("CG","CHG","CHH"), context_label = NULL, min_coverage = 10){
+filterMethResult <- function(methyl_data, ref_sequence_name = NULL, context = c("CG","CHG","CHH"), context_label = NULL, min_coverage = 10, max_coverage = NA){
   methyl_data <- as.data.frame(methyl_data)
   if(!is.null(ref_sequence_name)){
     methyl_data <- methyl_data[methyl_data$chr != ref_sequence_name,]
   }
-  methyl_data <- methyl_data[methyl_data$context %in% context & methyl_data$coverage >= min_coverage,]
-
+  if(is.na(max_coverage))
+    methyl_data <- methyl_data[methyl_data$context %in% context & methyl_data$coverage >= min_coverage,]
+  else
+    methyl_data <- methyl_data[methyl_data$context %in% context & methyl_data$coverage < max_coverage,]
+  
   if(is.null(context_label)){
     context_label <- paste0(context, collapse = ",")
   }
@@ -356,7 +359,7 @@ convertMethResult <- function(methyl_data, assembly='hg38', resolution='base'){
 }
 
 ##############################################
-######## Read data using MethylKit ############
+######## Read data to MethylKit ############
 readMethData <- function(config, context = c("CG","CHG","CHH"), context_label = NULL, min_coverage = 10, result_format = c('bed','rds')){
   result_format <- checkFormat(result_format, supported = c('bed','rds'))
   result_dir <- file.path(config$results_path, "methyl_results")
@@ -394,4 +397,32 @@ readMethData <- function(config, context = c("CG","CHG","CHH"), context_label = 
   attr(methData, 'mincov') <- min_coverage
   
   return(methData)
+}
+
+##############################################
+######## Read data using MethylKit ############
+#config <- conf
+getCovSummary <- function(config, min_coverage = c(7,8,9,10,11,12,13), result_format = c('bed','rds')){
+  result_format <- checkFormat(result_format, supported = c('bed','rds'))
+  result_dir <- file.path(config$results_path, "methyl_results")
+  result_files <- list.files(result_dir, full.names = T)
+  result_files <- result_files[endsWith(tolower(result_files), paste0('.methylation_results.', result_format))]
+  sample_id <- unlist(lapply(strsplit(basename(result_files), '\\.'), function(x){x[1]}))
+  covSummaryDF <- list()
+  for(i in 1:length(result_files)){
+    cat(paste0('Reading file: ', result_files[i], '\n'))
+    methyl_result_data <- readMethResult(result_files[i], version = 2)
+    cat(paste0('Calculation Covegares: ', result_files[i], '\n'))
+    for(c in min_coverage){
+      number_of_Cs_in_panel_CpG_cov_minC <- nrow(filterMethResult(methyl_result_data, config$ref_control_sequence_name, context = c('CG'), min_coverage = c))
+      number_of_Cs_in_panel_CpG_cov_maxC <- nrow(filterMethResult(methyl_result_data, config$ref_control_sequence_name, context = c('CG'), max_coverage = c))
+      number_of_Cs_in_panel_non_CpG_cov_minC <- nrow(filterMethResult(methyl_result_data, config$ref_control_sequence_name, context = c('CHG','CHH'), min_coverage = c))
+      
+      covSummaryDF[[length(covSummaryDF)+1]] <- data.frame(SampleID = sample_id[i], value = number_of_Cs_in_panel_CpG_cov_minC, context = 'CpG', min_coverage = c, max_coverage = NA)  
+      covSummaryDF[[length(covSummaryDF)+1]] <- data.frame(SampleID = sample_id[i], value = number_of_Cs_in_panel_CpG_cov_maxC, context = 'CpG', min_coverage = NA, max_coverage = c)  
+      covSummaryDF[[length(covSummaryDF)+1]] <- data.frame(SampleID = sample_id[i], value = number_of_Cs_in_panel_non_CpG_cov_minC, context = 'non-CpG', min_coverage = c, max_coverage = NA) 
+    }
+  }
+  covSummaryDF <- rbindlist(covSummaryDF)
+  return (covSummaryDF)
 }

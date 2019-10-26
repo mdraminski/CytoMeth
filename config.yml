@@ -1,5 +1,5 @@
 ### General Params
-verbose: TRUE
+verbose: FALSE
 threads: 12
 java_mem: 16G
 overwrite_results: FALSE

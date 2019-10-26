@@ -8,9 +8,12 @@ conf <- readConfig()
 # read all SAMPLE_QC_summary.yml files as one data.frame and save it to csv file
 save <- T
 qcsumm <- readAllQCSummary(conf, save = save)
+print(qcsumm)
+
 # create all final summary plots
-gg <- plotSitesCovBy10(qcsumm, conf, share = F, save = save)
-gg <- plotSitesCovBy10CpGnonCpG(qcsumm, conf, share = F, save = save)
+covSummary <- getCovSummary(conf, min_coverage = c(7,8,9,10,11,12,13), result_format = c('bed','rds'))
+gg <- plotSitesCpG(covSummary, conf, min_coverage = 10, share = F, save = save)
+gg <- plotSitesNonCpG(covSummary, conf, min_coverage = 10, share = F, save = save)
 
 # Context: non-CpG
 methData <- readMethData(conf, context = c("CHG","CHH"), context_label = 'non-CpG', min_coverage = 10)
@@ -27,3 +30,6 @@ gg <- plotMethLevels(methData, conf, share = T, save = save)
 gg <- plotCpGAnnotation(methData, hypo_hyper_def = c(0.2,0.8), conf, share = T, save = save)
 gg <- plotCntCommonCpG(methData, conf, save = save)
 
+
+
+  

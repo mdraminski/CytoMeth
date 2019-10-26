@@ -182,7 +182,7 @@ unzip ./RefData/CytoMethRefData.zip;
 All reference files are located in */RefData/* directory by default.
 
 ### Basic Example Data
-Basic E
+Basic example data may be downloaded by wget command:
 ```bash
 wget -c -O ./input/small_FAKE03_R1.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth/input/small_FAKE03_R1.fastq;
 wget -c -O ./input/small_FAKE03_R2.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth/input/small_FAKE03_R2.fastq;
@@ -304,22 +304,38 @@ Important: Check if your panel file (bed format) control sequence coordinates ha
 
 ## Running the CytoMeth Processing
 
-To run the batch processing of all samples located in *'/input/'* directory please type in a terminal window:
+To run entire CytoMeth processing and summary reporting please run '*CytoMeth.sh*' bash script in a terminal window:
+```bash
+./CytoMeth.sh
+```
+
+It is also possible to run the batch processing separately for all samples located in *'/input/'* directory. It it is required  please type in a terminal window:
 ```bash
 Rscript R/CytoMeth.R
 ```
 
-After processing is finished create quality report on all results files located in *'/results/QC_report'* directory:
+When above processing is finished create summary quality report on all results files located in *'/results/QC_report'* directory:
 ```bash
 Rscript R/CytoMethQC.R
 ```
 The script above creates summary csv file that aggregates quality measures values for all processed samples. It also creates two barplots: overall coverage report plot, CpG vs nonCpG frequency report. The methylation results can be also visualised in respect to specific genomic regions.
 We annotate the level of methylation to CpG islands, promoters, intergenic regions, introns and exons and provide proper plots in '*results/QC_report*' directory.
 
+It is also possible to define your own processing chain and run multiple experiments on different input and output folders or different set of input parameters. To set up the CytoMeth process manually plese edit '*CytoMeth.R*' file.
+```R
+source("./R/main.R")
+#read default config from the config.yml file
+conf <- readConfig()
+#set up required parameters e.g. input path
+conf$input_path <- "./myinputfolder/"
+conf$overwrite_results <- F
 
-You can run both phases by running '*CytoMeth.sh*' bash script in a terminal window:
-```bash
-./CytoMeth.sh
+# run batch processing of all files located in conf$input_path folder
+CytoMeth(conf)
+
+# For single sample processing it is required to define R1 and R2 files
+CytoMeth(conf, file.path(conf$input_path,"small_FAKE03_R1.fastq"), 
+  file.path(conf$input_path,"small_FAKE03_R2.fastq"))
 ```
 
 ## Output files

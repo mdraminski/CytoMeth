@@ -1,6 +1,10 @@
 CytoMeth - Changes
 =============
 
+## Version 0.9.14
+* new plot functions plotSitesCpG and plotSitesNonCpG allow for any min_coverage
+* manual updated
+
 ## Version 0.9.13
 * output files bed format - finalized structure
 * new output files rds format

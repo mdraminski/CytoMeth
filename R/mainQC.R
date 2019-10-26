@@ -174,17 +174,24 @@ readAllQCSummary <- function(config, save = T){
 
 ####################################################
 #### PLOT: Number of sites in CpG context covered by more/less than 10
-plotSitesCovBy10 <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+plotSitesCpG <- function(cov_summary_data, config, min_coverage = 10, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+  cov <- min_coverage
+  if(!cov %in% cov_summary_data$min_coverage){
+    warning(paste0('Coverage: ',cov, ' is not present in input cov_summary_data.'))
+    return(NULL)
+  }
+
+  cov_summary_data <- cov_summary_data[cov_summary_data$context == 'CpG' & (cov_summary_data$min_coverage == cov | cov_summary_data$max_coverage == cov),]
+  cov_summary_data$coverage <- paste0("cov>=",cov)
+  cov_summary_data$coverage[!is.na(cov_summary_data$max_coverage) & cov_summary_data$max_coverage == cov] <- paste0("cov<",cov)
+  cov_summary_data$coverage <- factor(cov_summary_data$coverage, levels = c(paste0("cov<",cov), paste0("cov>=",cov)))
   
-  qc_summary_coverage <- rbind(data.frame(SampleID = qc_summary$Sample_ID, Number = qc_summary$Number_of_Cs_in_panel_CpG_cov_min10, Coverage = "cov>=10", stringsAsFactors = F),
-                               data.frame(SampleID = qc_summary$Sample_ID, Number = qc_summary$Number_of_Cs_in_panel_CpG_cov_max9, Coverage = "cov<10", stringsAsFactors = F))
-  qc_summary_coverage$Coverage <- factor(qc_summary_coverage$Coverage, levels = c("cov<10","cov>=10"))
-  
-  gg <- ggplot(qc_summary_coverage, aes(fill=Coverage, y=Number, x=SampleID))
+  gg <- ggplot(cov_summary_data, aes(fill=coverage, y=value, x=SampleID))
   if(share){
     gg <- gg + geom_bar(stat="identity", position="fill")
-  }else
+  }else{
     gg <- gg + geom_bar(stat="identity")
+  }
   
   gg <- gg + theme_minimal() +
     theme_light() + scale_fill_manual(values=pal[1:2]) +
@@ -194,10 +201,10 @@ plotSitesCovBy10 <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), s
     theme(legend.text = element_text(size = fontsize)) + 
     ylab("Number of sites") +
     xlab("Sample ID") +
-    ggtitle("Number of sites in CpG context \ncovered by more/less than 10")
+    ggtitle(paste0("Number of sites in CpG context \ncovered by more/less than ", cov))
   
   if(save){
-    ggsave(filename = file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy10.",config$plot_format)), plot = gg, device=config$plot_format)
+    ggsave(filename = file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy",cov,'.',config$plot_format)), plot = gg, device=config$plot_format)
   }
   
   return(gg)
@@ -205,12 +212,17 @@ plotSitesCovBy10 <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), s
 
 ####################################################
 #### PLOT: Number of sites covered by minimum 10 reads \nseparately for sites in CpG and non-CpG context
-plotSitesCovBy10CpGnonCpG <- function(qc_summary, config, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+plotSitesNonCpG <- function(cov_summary_data, config, min_coverage = 10, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+  cov <- min_coverage
+  if(!cov %in% cov_summary_data$min_coverage){
+    warning(paste0('Coverage: ',cov, ' is not present in input cov_summary_data.'))
+    return(NULL)
+  }
   
-  qc_summary_cpg <- rbind(data.frame(SampleID = qc_summary$Sample_ID, Number = qc_summary$Number_of_Cs_in_panel_CpG_cov_min10, Context = "CpG", stringsAsFactors = F),
-                          data.frame(SampleID = qc_summary$Sample_ID, Number = qc_summary$Number_of_Cs_in_panel_non_CpG_cov_min10, Context = "non-CpG", stringsAsFactors = F))
+  cov_summary_data <- cov_summary_data[cov_summary_data$min_coverage == cov,]
+  cov_summary_data$context <- factor(cov_summary_data$context, levels = c("CpG","non-CpG"))
   
-  gg <- ggplot(qc_summary_cpg, aes(fill=Context, y=Number, x=SampleID))
+  gg <- ggplot(cov_summary_data, aes(fill=context, y=value, x=SampleID))
   if(share){
     gg <- gg + geom_bar(stat="identity", position="fill")
   }else
@@ -224,9 +236,9 @@ plotSitesCovBy10CpGnonCpG <- function(qc_summary, config, pal = brewer.pal(8, "D
     theme(legend.text = element_text(size = fontsize)) + 
     ylab("Number of sites") +
     xlab("Sample ID") +
-    ggtitle("Number of cytosines covered by at least 10 reads \nin the CpG and non-CpG context")
+    ggtitle(paste0("Number of cytosines covered by at least ",cov," reads \nin the CpG and non-CpG context"))
   if(save){
-    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy10CpGnonCpG.",config$plot_format)), plot=gg, device=config$plot_format)
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy",cov,"CpGnonCpG.",config$plot_format)), plot=gg, device=config$plot_format)
   }
   
   return(gg)
