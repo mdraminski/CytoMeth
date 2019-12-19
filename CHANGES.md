@@ -1,5 +1,9 @@
 CytoMeth - Changes
 =============
+## Version 0.9.15
+* reshape2 fix
+* updated Dockerfile and install.packages.R files
+* autodetect total memory size and cpu cores and fix the config if needed
 
 ## Version 0.9.14
 * new plot functions plotSitesCpG and plotSitesNonCpG allow for any min_coverage

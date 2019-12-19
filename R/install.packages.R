@@ -8,15 +8,20 @@ install.packages("RColorBrewer", lib = Sys.getenv("R_LIBS_USER"), repos='http://
 install.packages("rjson", lib = Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')
 install.packages(c("yaml"),lib = Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')
 install.packages(c("stringr"),lib = Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')
+install.packages(c("benchmarkme"),lib = Sys.getenv("R_LIBS_USER"), repos='http://cran.us.r-project.org')
 
 # install biocunductor packages
-bioPckg <- c("methylKit","GenomicRanges","genomation","genomationData")
+bioPckg <- c("Rhtslib","Rsamtools","rtracklayer","methylKit","GenomicRanges","genomation","genomationData")
 if(getRVer() < 3.5){
   source("https://bioconductor.org/biocLite.R")
-  biocLite(bioPckg)
+  for(i in 1:length(bioPckg)){
+    biocLite(bioPckg[i])
+  }
 }else{
   if (!requireNamespace("BiocManager", quietly = TRUE)){
     install.packages("BiocManager")
   }
-  BiocManager::install(bioPckg)
+  for(i in 1:length(bioPckg)){
+    BiocManager::install(bioPckg[i])
+  }
 }

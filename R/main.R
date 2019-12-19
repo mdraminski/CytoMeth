@@ -8,6 +8,7 @@ library("methylKit")
 library("GenomicRanges")
 library("genomation")
 library("stringr")
+library("benchmarkme")
 
 source("./R/utils.R")
 source("./R/mainQC.R")
@@ -15,7 +16,7 @@ source("./R/mainQC.R")
 #########################################
 CytoMethInfo <- function(){
   cat("#######################################\n")
-  cat("### CytoMeth ver 0.9.14 (25-10-2019) ###\n")
+  cat("### CytoMeth ver 0.9.15 (20-12-2019) ###\n")
   cat("#######################################\n")
   cat("### Created by Michal Draminski, Agata Dziedzic, Rafal Guzik, Bartosz Wojtas and Michal J. Dabrowski ###\n")
   cat("### Computational Biology Lab, Polish Academy of Science, Warsaw, Poland ###\n")

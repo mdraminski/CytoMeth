@@ -1,6 +1,7 @@
 source("./R/main.R")
 #read default config from the config.yml file
 conf <- readConfig()
+sconf <- fixMachineConfig(conf, thread_max = 12, mem_max = 16)
 #set up required parameters e.g. input path
 #conf$input_path <- "./input/"
 

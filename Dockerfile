@@ -10,6 +10,7 @@ RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu disco-c
 
 #RUN apt-get update && apt-get install -y --install-recommends \
 RUN apt-get update && apt-get install -y \
+locales \
 default-jdk \
 nano \
 wget \
@@ -17,7 +18,13 @@ zip \
 unzip \
 python2 \
 r-base \
-r-base-dev
+r-base-dev \
+libcurl4-openssl-dev
+
+RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+RUN echo "LANG=en_US.UTF-8" > /etc/locale.conf
+RUN locale-gen en_US.UTF-8
 
 RUN su - -c "R CMD javareconf"
 
@@ -25,9 +32,9 @@ RUN wget https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
 RUN bash Anaconda3-2019.03-Linux-x86_64.sh -b -p /opt/anaconda
 RUN rm Anaconda3-2019.03-Linux-x86_64.sh 
 
-WORKDIR /app
-COPY . /app
+WORKDIR /CytoMeth
+COPY . /CytoMeth
 
 RUN yes | ./install.sh
 
-COPY . /app
+COPY . /CytoMeth

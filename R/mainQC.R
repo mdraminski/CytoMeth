@@ -426,7 +426,7 @@ plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = bre
   
   annot_summary <- lapply(meth_data, function(x){ 
     annot <- annotateWithGeneParts(as(x,"GRanges"), gene_annot_data) 
-    d <- data.frame(melt(t(getTargetAnnotationStats(annot, percentage=TRUE,precedence=F))))
+    d <- data.frame(reshape2::melt(t(getTargetAnnotationStats(annot, percentage=TRUE,precedence=F))))
     d$Var1 <- x@sample.id
     names(d) <- c("Sample_Id", "Gene_Part", "Frequency")
     return(d)
@@ -465,7 +465,7 @@ plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = br
   
   annot_summary <- lapply(meth_data, function(x){ 
     annot <- annotateWithFeatureFlank(as(x,"GRanges"), cpg_annot_data$CpGi, cpg_annot_data$shores, feature.name="CpGi", flank.name="shores")
-    d <- data.frame(melt(t(getTargetAnnotationStats(annot, percentage=TRUE,precedence=F))))
+    d <- data.frame(reshape2::melt(t(getTargetAnnotationStats(annot, percentage=TRUE,precedence=F))))
     d$Var1 <- x@sample.id
     names(d) <- c("Sample_Id", "Region", "Frequency")
     return(d)

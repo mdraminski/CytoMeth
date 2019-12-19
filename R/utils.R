@@ -8,17 +8,58 @@ readConfig <- function(file = "config.yml", tools.file = "./tools/tools.conf.yml
   dir.create(file.path(conf$results_path), showWarnings = F)
   conf$input_path <- normalizePath(file.path(conf$input_path))
   conf$results_path <- normalizePath(file.path(conf$results_path))
+  conf$ref_data_path <- normalizePath(file.path(conf$ref_data_path))
   
   conf_tools <- yaml::yaml.load_file(tools.file)
   conf_tools$tools_path <- normalizePath(file.path(conf_tools$tools_path))
-  conf_tools$ref_data_path <- normalizePath(file.path(conf_tools$ref_data_path))
-  
+
   condaPath <- readCondaPath("conda.info")
   if(!is.na(condaPath) & is.null(conf$anaconda_bin_path))
     conf$anaconda_bin_path <- condaPath
   
   conf <- c(conf, conf_tools)
   return(conf)
+}
+
+#########################################
+# readCondaPath
+#########################################
+#mem_max #GB
+fixMachineConfig <- function(config, thread_max = 12, mem_max = 16){
+  mem_unit <- "GB"
+  mem_mult <- 1e+9
+
+  defined_memory <- si2f(config$java_mem)
+  total_ram <- as.numeric(benchmarkme::get_ram())
+  if(total_ram < si2f(config$java_mem) || is.na(defined_memory)){
+    defined_memory <- min(round((total_ram * 0.75)/mem_mult), mem_max)
+    warning(paste0("Size of detected memory [",round(total_ram/mem_mult)," ", mem_unit, "] is lower than set up [",config$java_mem,"] in 'config.yml' file. Switching to default: ", defined_memory," ",mem_unit))
+    config$java_mem <- defined_memory
+  }
+  
+  cpu_threads <- benchmarkme::get_cpu()$no_of_cores
+  if(cpu_threads < config$threads){
+    new_threads <- min(cpu_threads - 1, thread_max)
+    warning(paste0("Number of detected CPU threads [",cpu_threads,"] is lower than set up threads [",config$threads,"] in 'config.yml' file. Switching to default: ",new_threads, " threads"))
+    config$threads <- new_cores
+  }
+  return(config)
+}
+
+#########################################
+# si2f
+#########################################
+si2f <- function(x){
+  sufix <- c('k','kb','m','mb','g','gb','t','tb')
+  mult <- c(1e+3,1e+3,1e+6,1e+6,1e+9,1e+9,1e+12,1e+12)
+  curr_sufix <- endsWith(tolower(x), sufix)
+  if(any(curr_sufix)){
+    sufix_length <- nchar(sufix)[curr_sufix]
+    x <- as.numeric(stringr::str_trim(substr(x,start = 1, nchar(x)-sufix_length))) * mult[curr_sufix]
+  }else{
+    x <- as.numeric(x)
+  }
+  return(x)
 }
 
 #########################################

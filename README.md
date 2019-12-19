@@ -54,12 +54,12 @@ conda info
 ```
 If conda *command not found* please install it. Download anaconda from the web:
 ```bash
-wget https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
+wget https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh
 ```
 Install it in the following directory: '*/opt/anaconda*' and remove the installation file.
 ```bash
-sudo bash Anaconda3-2019.03-Linux-x86_64.sh -b -p /opt/anaconda
-rm Anaconda3-2019.03-Linux-x86_64.sh 
+sudo bash Anaconda3-2019.10-Linux-x86_64.sh -b -p /opt/anaconda
+rm Anaconda3-2019.10-Linux-x86_64.sh 
 ```
 Create new users group 'anaconda' and give all required priviliges to that group.
 ```bash
@@ -222,7 +222,9 @@ input_path: "./input/"
 results_path: "./results/"
 #anaconda_bin_path: "/opt/anaconda/bin/"
 
-### Reference Data Definition
+### Reference Data - Path
+ref_data_path: "./RefData/"
+### Reference Data - Files
 reference_sequence_file: "hg38_phage.fa"
 intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
 ref_sequence_name: "NC_001416"
@@ -244,6 +246,7 @@ Input parameters:
 - input_path - defines path to input fastq R1/R2 files, all samples existing in this directory will be processed in batch process.
 - results_path - the path to keep all temporary and result files.
 - anaconda_bin_path - path to conda and conda packages. This parameter is retrieved from 'conda.info' file and it is commented out by default. If you want to specify specific path to conda/bin directory uncommend it and define. This parameter overwrites the setting from 'conda.info' file.
+- ref_data_path - defines path to the reference data
 - ref_data_sequence_file - additional control sequence file (see Input files section) by default it is set on 'hg38_phage.fa'.
 - ref_data_intervals_file - panel file (see Input files section)  by default it is set on SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed'
 - ref_control_sequence_name - name of control sequence (by default phage sequence)
@@ -277,9 +280,7 @@ bisSNP:
 ### python2 path
 python2: "python2"
 
-### Reference Data - Path
-ref_data_path: "./RefData/"
-
+### Reference Data - Remaining Files
 ref_data_trimmomatic_adapter: "Trimmomatic/adapters/TruSeq3-PE-2.fa"
 ref_data_CpgIslandAnnotation: "cpgIslandExt.hg38.bed"
 ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
@@ -309,7 +310,7 @@ To run entire CytoMeth processing and summary reporting please run '*CytoMeth.sh
 ./CytoMeth.sh
 ```
 
-It is also possible to run the batch processing separately for all samples located in *'/input/'* directory. It it is required  please type in a terminal window:
+It is also possible to run the batch processing separately for all samples located in *'/input/'* directory. If it is required  please type in a terminal window:
 ```bash
 Rscript R/CytoMeth.R
 ```

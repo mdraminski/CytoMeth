@@ -11,9 +11,13 @@ input_path: "./input/"
 results_path: "./results/"
 #anaconda_bin_path: "/opt/anaconda/bin/"
 
-### Reference Data Definition
-ref_data_sequence_file: "hg38_phage.fa"
-ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed"
+### Reference Data - Path
+ref_data_path: "./RefData/"
+### Reference Data - Files
+ref_data_sequence_file: "hg38.fa"
+ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
+#ref_data_sequence_file: "hg38_phage.fa"
+#ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed"
 ref_control_sequence_name: "NC_001416"
 
 ### Specific Tools params
