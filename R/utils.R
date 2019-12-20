@@ -33,15 +33,15 @@ fixMachineConfig <- function(config, thread_max = 12, mem_max = 16){
   total_ram <- as.numeric(benchmarkme::get_ram())
   if(total_ram < si2f(config$java_mem) || is.na(defined_memory)){
     defined_memory <- min(round((total_ram * 0.75)/mem_mult), mem_max)
-    warning(paste0("Size of detected memory [",round(total_ram/mem_mult)," ", mem_unit, "] is lower than set up [",config$java_mem,"] in 'config.yml' file. Switching to default: ", defined_memory," ",mem_unit))
+    warning(paste0("Size of detected memory [",round(total_ram/mem_mult)," ", mem_unit, "] is lower than set up [",config$java_mem,"] in 'config.yml' file. Switching to ", defined_memory," ",mem_unit))
     config$java_mem <- defined_memory
   }
   
   cpu_threads <- benchmarkme::get_cpu()$no_of_cores
   if(cpu_threads < config$threads){
     new_threads <- min(cpu_threads - 1, thread_max)
-    warning(paste0("Number of detected CPU threads [",cpu_threads,"] is lower than set up threads [",config$threads,"] in 'config.yml' file. Switching to default: ",new_threads, " threads"))
-    config$threads <- new_cores
+    warning(paste0("Number of detected CPU threads [",cpu_threads,"] is lower than set up threads [",config$threads,"] in 'config.yml' file. Switching to ",new_threads, " threads"))
+    config$threads <- new_threads
   }
   return(config)
 }
@@ -161,6 +161,12 @@ checkRequiredTools <- function(config){
 # checkRequiredFiles
 #########################################
 checkRequiredFiles <- function(config){
+  
+  if(!dir.exists(config$ref_data_path)){
+    stop(paste0("Required Reference directory: ",  config$ref_data_path, 
+                " does not exist. (See 'Reference Files' section in CytoMeth manual."))
+  }
+  
   cytoMethRefFiles <- c(
     file.path(config$ref_data_path, config$ref_data_sequence_file),
     file.path(config$ref_data_path, paste0(config$ref_data_sequence_file,".fai")),

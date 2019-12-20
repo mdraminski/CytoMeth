@@ -1,16 +1,16 @@
 #!/bin/bash
-# zip -lv ./RefData/CytoMethRefData.zip ./RefData/*
+# zip -lv ./referenceData/CytoMethReferenceData.zip ./referenceData/*
 echo "#######################################"
 echo "Downloading of Required Reference Files"
 echo "#######################################"
-mkdir -p ./RefData/
+mkdir -p ./referenceData/
 while true; do
     read -p "Do you wish to download required reference files? (y/n)" yn
     case $yn in
         [Yy]* ) 
-                wget -c -O ./RefData/CytoMethRefData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/CytoMethRefData.zip;
-                unzip ./RefData/CytoMethRefData.zip;
-                rm ./RefData/CytoMethRefData.zip;
+                wget -c -O ./referenceData/CytoMethReferenceData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/referenceData/CytoMethReferenceData.zip;
+                unzip ./referenceData/CytoMethReferenceData.zip;
+                rm ./referenceData/CytoMethReferenceData.zip;
                 break;;
         [Nn]* ) echo "Skipping downloading"; break;;
         * ) echo "Please answer yes or no";;

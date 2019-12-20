@@ -1,8 +1,8 @@
 ### General Params
-verbose: FALSE
+verbose: TRUE
 threads: 12
 java_mem: 16G
-overwrite_results: FALSE
+overwrite_results: TRUE
 clean_tmp_files: TRUE
 plot_format: "pdf"
 
@@ -12,7 +12,7 @@ results_path: "./results/"
 #anaconda_bin_path: "/opt/anaconda/bin/"
 
 ### Reference Data - Path
-ref_data_path: "./RefData/"
+ref_data_path: "./referenceData/"
 ### Reference Data - Files
 ref_data_sequence_file: "hg38.fa"
 ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"

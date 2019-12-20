@@ -176,10 +176,10 @@ This file is also created during installation process.
 Reference files required by CytoMeth are automatically installed by '*install.data.sh*' script. If you would like to download them manually plese run the following commands in a terminal window:
 
 ```bash
-wget -c -O ./RefData/CytoMethRefData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/RefData/CytoMethRefData.zip;
-unzip ./RefData/CytoMethRefData.zip;
+wget -c -O ./referenceData/CytoMethReferenceData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/referenceData/CytoMethReferenceData.zip;
+unzip ./referenceData/CytoMethReferenceData.zip;
 ```
-All reference files are located in */RefData/* directory by default.
+All reference files are located in */referenceData/* directory by default.
 
 ### Basic Example Data
 Basic example data may be downloaded by wget command:
@@ -190,16 +190,28 @@ wget -c -O ./input/small_FAKE03_R2.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth
 
 
 ## The Docker
-CytoMeth project is also available as a docker. To build your own docker use *build* command and after the successful creation the docker is ready to run. Pleaese notice building of the docker may take tens of minutes because the proper environment must be created from the scratch, however it must be done only once.
+CytoMeth project is also available as a docker. The CytoMeth docker is a virtual machine that contains all the environment (apps and libraries) ready to run CytoMeth. To download and run CytoMeth docker please install Docker app from https://www.docker.com/
+
+### Building your own docker locally
+To build your own docker use *build* command and after the successful creation the docker is ready to run. Pleaese notice building of the docker may take tens of minutes because the proper environment must be created from the scratch, however it must be done only once.
 ```bash
 docker build -t cytometh .
 docker run -it cytometh /bin/bash
 ```
 
-Reference data is several Gigabytes big therefore it is not included in the parent docker. However after successful running of the docker you can download the data by running '*install.data.sh*' script in the CytoMeth main directory. 
+### Downloading the docker from Docker Hub
+The docker is also publicly available on Docker Hub and to download it you just need to pull it.
+```bash
+docker pull mdraminski/cytometh
+docker run -it cytometh /bin/bash
+```
+
+### Reference data
+Reference data is several Gigabytes big therefore it is not included in any parent docker. However after successful running of the docker you can download the data by running '*install.data.sh*' script in the CytoMeth main directory. 
 ```bash
 ./install.data.sh
 ```
+After successful installation of the reference data CytoMeth docker is ready to use.
 
 # Usage
 
@@ -223,7 +235,7 @@ results_path: "./results/"
 #anaconda_bin_path: "/opt/anaconda/bin/"
 
 ### Reference Data - Path
-ref_data_path: "./RefData/"
+ref_data_path: "./referenceData/"
 ### Reference Data - Files
 reference_sequence_file: "hg38_phage.fa"
 intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"

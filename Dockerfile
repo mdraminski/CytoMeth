@@ -19,7 +19,8 @@ unzip \
 python2 \
 r-base \
 r-base-dev \
-libcurl4-openssl-dev
+libcurl4-openssl-dev \
+libssl-dev
 
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
