@@ -317,9 +317,9 @@ Important: Check if your panel file (bed format) control sequence coordinates ha
 
 ## Running the CytoMeth Processing
 
-To run entire CytoMeth processing and summary reporting please run '*CytoMeth.sh*' bash script in a terminal window:
+To run entire CytoMeth processing and summary reporting please run '*CytoMethRun.sh*' bash script in a terminal window:
 ```bash
-./CytoMeth.sh
+./CytoMethRun.sh
 ```
 
 It is also possible to run the batch processing separately for all samples located in *'/input/'* directory. If it is required  please type in a terminal window:
