@@ -1,5 +1,5 @@
 #!/bin/bash
-# zip -lv ./referenceData/CytoMethReferenceData.zip ./referenceData/*
+# zip -v ./referenceData/CytoMethReferenceData.zip ./referenceData/*
 echo "#######################################"
 echo "Downloading of Required Reference Files"
 echo "#######################################"
