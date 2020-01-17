@@ -200,7 +200,7 @@ docker build -t cytometh .
 ### Downloading the docker from Docker Hub
 The docker ready to go is also publicly available on Docker Hub and can be pulled to your system by the command below.
 ```bash
-docker pull mdraminski/cytometh
+docker pull mdraminski/cytometh:1
 ```
 
 ### Running the docker
