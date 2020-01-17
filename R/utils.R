@@ -3,29 +3,35 @@
 #########################################
 # file = "conf.yml"; tools.file = "./tools/tools.conf.yml";
 readConfig <- function(file = "config.yml", tools.file = "./tools/tools.conf.yml"){
+  ### READ MAIN CONFIG
   conf <- yaml::yaml.load_file(file)
   dir.create(file.path(conf$input_path), showWarnings = F)
   dir.create(file.path(conf$results_path), showWarnings = F)
   conf$input_path <- normalizePath(file.path(conf$input_path))
   conf$results_path <- normalizePath(file.path(conf$results_path))
   conf$ref_data_path <- normalizePath(file.path(conf$ref_data_path))
-  
+
+  ### READ TOOLS CONFIG
   conf_tools <- yaml::yaml.load_file(tools.file)
   conf_tools$tools_path <- normalizePath(file.path(conf_tools$tools_path))
-
   condaPath <- readCondaPath("conda.info")
   if(!is.na(condaPath) & is.null(conf$anaconda_bin_path))
     conf$anaconda_bin_path <- condaPath
+  #setup picard parser
+  conf_tools$picard_parser <- ""
+  if(conf_tools$picard_ver == 2){
+    conf_tools$picard_parser <- " -Dpicard.useLegacyParser=true "
+  }
   
   conf <- c(conf, conf_tools)
   return(conf)
 }
 
 #########################################
-# readCondaPath
+# fixMachineConfig
 #########################################
-#mem_max #GB
-fixMachineConfig <- function(config, thread_max = 12, mem_max = 16){
+#check if the machine can run hardware parameters defined in config.yml [mem_max in GB]
+fixMachineConfig <- function(config, thread_max = 16, mem_max = 32){
   mem_unit <- "GB"
   mem_mult <- 1e+9
 
@@ -294,6 +300,26 @@ fileExt <- function(x){
     ext <- ''
   return (ext)
 }
+
+#########################################
+# basename_noext
+#########################################
+basename_noext <- function(filename){
+  filename <- tools::file_path_sans_ext(basename(filename))
+  return(filename)
+}
+
+#########################################
+# basename_sample
+#########################################
+basename_sample <- function(filename){
+  filename <- tools::file_path_sans_ext(basename(filename))
+  mymask <- endsWith(tolower(filename),'_r1') | endsWith(tolower(filename),'_r2')
+  #remove last three characters if there is _r1 or _r2 at the end
+  filename[mymask] <- stringr::str_sub(filename[mymask], end=-4)
+  return(filename)
+}
+
 ###############################
 #open.plot.file
 ###############################
@@ -473,3 +499,60 @@ getCovSummary <- function(config, min_coverage = c(7,8,9,10,11,12,13), result_fo
   covSummaryDF <- rbindlist(covSummaryDF)
   return (covSummaryDF)
 }
+
+#############################################################
+######## Read unique chromosomes from sample bed  file  #####
+getSampleChr <- function(filepath, buff = 100000) {
+  con <- file(filepath, "r")
+  chrlines <- c()
+  b <- 0
+  while (TRUE) {
+    lines <- readLines(con, n = buff)
+    if (length(lines) == 0) {
+      break
+    }
+    chrline <- unique(unlist(lapply(str_split(lines, pattern="\t", n=2), function(x) return(x[1]))))
+    chrline <- chrline[startsWith(chrline,"chr")]
+    if(length(chrline)>0 | is.null(chrlines)){
+      chrlines <- unique(c(chrlines, chrline))
+    }
+    cat(".")
+    b <- b + 1
+    if(b%%100 == 0)
+      cat("\n")  
+  }
+  if(isOpen(con, rw = "")){
+    close(con)
+  }
+  cat("\n")
+  return(chrlines)
+}
+
+#############################################################
+######## Read unique chromosomes from reference fa file  ####
+getRefChr <- function(filepath, buff = 100000) {
+  con <- file(filepath, "r")
+  chrlines <- c()
+  b <- 0
+  while (TRUE) {
+    lines <- readLines(con, n = buff)
+    if (length(lines) == 0) {
+      break
+    }
+    chrline <- lines[startsWith(lines, ">")]
+    if(length(chrline)>0 | is.null(chrlines)){
+      chrlines <- unique(c(chrlines, sub(".", "", chrline)))
+    }
+    cat(".")
+    b <- b + 1
+    if(b%%100 == 0)
+      cat("\n")  
+  }
+  if(isOpen(con, rw = "")){
+    close(con)
+  }
+  cat("\n")
+  return(chrlines)
+}
+
+

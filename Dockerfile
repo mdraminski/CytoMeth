@@ -17,6 +17,7 @@ wget \
 zip \
 unzip \
 python2 \
+python-pip \
 r-base \
 r-base-dev \
 libcurl4-openssl-dev \

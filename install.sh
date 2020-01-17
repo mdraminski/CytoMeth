@@ -1,6 +1,20 @@
 #!/bin/bash
 
 echo "#######################################"
+echo "Installation of Required python2 packages"
+echo "#######################################"
+while true; do
+    read -p "Do you wish to install or update required python2 packages? (y/n)" yn
+    case $yn in
+        [Yy]* ) python2 -m pip install --upgrade pip;
+                python2 -m pip install pysam;
+                break;;
+        [Nn]* ) echo "Skipping installation"; break;;
+        * ) echo "Please answer yes or no";;
+    esac
+done
+
+echo "#######################################"
 echo "Installation of Required conda packages"
 echo "#######################################"
 #install tools by conda 
@@ -9,12 +23,15 @@ while true; do
     case $yn in
         [Yy]* ) conda update conda;
                 conda update conda-build;
+                conda config --add channels r
+                conda config --add channels bioconda
                 conda install -y -c bioconda bsmap;
                 conda install -y -c bioconda bamtools;
                 conda install -y -c bioconda bamutil;
                 conda install -y -c bioconda bedtools;
                 conda install -y -c bioconda seqtk;
                 conda install -y -c bioconda fastqc;
+                conda install -y -c bioconda pysam;
                 conda install -y -c bioconda -c r samtools --override-channels;
                 break;;
         [Nn]* ) echo "Skipping installation"; break;;
@@ -43,4 +60,3 @@ done
 echo "########################"
 echo "Installation is Finished"
 echo "########################"
-

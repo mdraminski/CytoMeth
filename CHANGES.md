@@ -1,5 +1,9 @@
 CytoMeth - Changes
 =============
+## Version 0.9.16
+* bam files can be used as an input
+* less memory usage during CalcMethylation Step
+
 ## Version 0.9.15
 * reshape2 fix
 * updated Dockerfile and install.packages.R files

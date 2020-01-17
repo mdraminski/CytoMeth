@@ -419,8 +419,8 @@ The directory '*results/QC_report/*' contains set of plot files:
 # Version
 For more information please see CHANGES.md
 
-- Version: 0.9.12
-- Date: 13.09.2019
+- Version: 0.9.16
+- Date: 17.01.2020
 
 # Authors
 This tool has been created and implemented by:
@@ -447,7 +447,6 @@ The set of tools, used by or provided with CytoMeth is under following licenses:
 - bamtools - The MIT License https://github.com/pezmaster31/bamtools/blob/master/LICENSE
 - bamUtil - GNU General Public License https://github.com/statgen/bamUtil/blob/master/src/Validate.h
 - GATK - BSD 3-Clause "New" or "Revised" License https://github.com/broadinstitute/gatk/blob/master/LICENSE.TXT
-- methratio - BSD 3-Clause License https://github.com/zyndagj/BSMAPz/blob/master/methratio.py
 - BisSNP GNU General Public License https://github.com/dnaase/Bis-tools/blob/master/Bis-SNP/src/main/java/edu/usc/epigenome/uecgatk/bissnp/BisSNP.java
 - samtools - The MIT/Expat License https://github.com/samtools/htslib-plugins/blob/master/LICENSE
 

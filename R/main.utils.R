@@ -1,0 +1,558 @@
+#########################
+######  run_seqtk  ######
+#########################
+run_seqtk <- function(config, config_tools){
+  seqtk_r1_file <- file.path(config$results_path, config_tools[config_tools$proces=="seqtk","temp_results_dirs"], basename(config$file_r1))
+  seqtk_r2_file <- file.path(config$results_path, config_tools[config_tools$proces=="seqtk","temp_results_dirs"], basename(config$file_r2))
+  
+  if(config$overwrite_results | !(file.exists(seqtk_r1_file) & file.exists(seqtk_r2_file))){
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$seqtk), " sample -s 10000 ", config$file_r1, " ", config$sqtk_subset, " > ", seqtk_r1_file)
+    runSystemCommand(config$myAppName, 'seqtk', 'subsample of reads R1', src_command, config$verbose)
+    
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$seqtk), " sample -s 10000 ", config$file_r2, " ", config$sqtk_subset, " > ", seqtk_r2_file)
+    runSystemCommand(config$myAppName, 'seqtk', 'subsample of reads R2', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'seqtk', 'subsample of reads',
+                file.path(config$results_path, config_tools[config_tools$proces=="seqtk","temp_results_dirs"],"/"))
+  }
+  
+  if(!checkIfFileExists(seqtk_r1_file)) return(NULL)
+  if(!checkIfFileExists(seqtk_r2_file)) return(NULL)
+  
+  config$file_r1 <- seqtk_r1_file
+  config$file_r2 <- seqtk_r2_file
+  
+  return(config)
+}
+
+#########################
+######  run_FastQC  ######
+#########################
+run_FastQC <- function(config, config_tools){
+  fastqc_result_dir <- file.path(config$results_path, config_tools[config_tools$tool=="fastqc","temp_results_dirs"])
+  fastqc_result_r1_file <- file.path(fastqc_result_dir, paste0(basename_noext(config$file_r1),"_fastqc.html"))
+  fastqc_result_r2_file <- file.path(fastqc_result_dir, paste0(basename_noext(config$file_r2),"_fastqc.html"))
+  
+  if(config$overwrite_results | !(file.exists(fastqc_result_r1_file) & file.exists(fastqc_result_r2_file))){
+    # src_command <- paste0(file.path(config$anaconda_bin_path, config$fastqc), " --nogroup ", 
+    #                       seqtk_result_file,"_subset_R1.fastq ",
+    #                       seqtk_result_file,"_subset_R2.fastq", 
+    #                       " --outdir ", fastqc_result_dir)
+    
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$fastqc), " --nogroup ", 
+                          config$file_r1, " ", config$file_r2, " --outdir ", fastqc_result_dir)
+    runSystemCommand(config$myAppName, 'fastqc', 'FastQC Report generation', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'FastQC', 'examine sequence read quality', fastqc_result_dir)
+  }
+  if(!checkIfFileExists(fastqc_result_r1_file)) return(NULL)
+  if(!checkIfFileExists(fastqc_result_r2_file)) return(NULL)
+  
+  return(config)
+}
+
+###############################
+######  run_Trimmomatic  ######
+###############################
+run_Trimmomatic <- function(config, config_tools){
+  trimming_result_r1_file <- file.path(config$results_path, config_tools[config_tools$proces=="trimming","temp_results_dirs"], basename_noext(config$file_r1))
+  trimming_result_r2_file <- file.path(config$results_path, config_tools[config_tools$proces=="trimming","temp_results_dirs"], basename_noext(config$file_r2))
+  trimmomatic_out_logfile <- file.path(config$results_path,"logs",paste0(basename_sample(config$file_r1),"_",config_tools[config_tools$tool=="trimmomatic","logfile"]))
+
+  if(config$overwrite_results | !(file.exists(paste0(trimming_result_r1_file,"_trimmed.fq")) & file.exists(paste0(trimming_result_r2_file,"_trimmed.fq")) &
+                                  file.exists(paste0(trimming_result_r1_file,"_unpaired.fq")) & file.exists(paste0(trimming_result_r2_file,"_unpaired.fq")) &
+                                  file.exists(trimmomatic_out_logfile)
+  )){
+    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem," -jar ", file.path(config$tools_path,config$trimmomatic),
+                          " PE -threads ",config$threads," -phred33 ",config$file_r1," ", config$file_r2," ",
+                          trimming_result_r1_file,"_trimmed.fq ", trimming_result_r1_file,"_unpaired.fq ",
+                          trimming_result_r2_file,"_trimmed.fq ", trimming_result_r2_file,"_unpaired.fq ",
+                          "ILLUMINACLIP:", file.path(config$tools_path, config$ref_data_trimmomatic_adapter),
+                          ":2:30:10 LEADING:20 TRAILING:20 SLIDINGWINDOW:5:20 MINLEN:",config$trimmomatic_MINLEN,
+                          " 2> ",trimmomatic_out_logfile)
+    runSystemCommand(config$myAppName, 'Trimmomatic', 'trimming', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Trimmomatic', 'trimming',
+                file.path(config$results_path, config_tools[config_tools$proces=="trimming","temp_results_dirs"],"/"))
+  }
+  if(!checkIfFileExists(paste0(trimming_result_r1_file,"_trimmed.fq"))) return(NULL)
+  if(!checkIfFileExists(paste0(trimming_result_r2_file,"_trimmed.fq"))) return(NULL)
+  if(!checkIfFileExists(paste0(trimming_result_r1_file,"_unpaired.fq"))) return(NULL)
+  if(!checkIfFileExists(paste0(trimming_result_r2_file,"_unpaired.fq"))) return(NULL)
+  if(!checkIfFileExists(trimmomatic_out_logfile)) return(NULL)
+  if(!checkLog(trimmomatic_out_logfile, "Completed successfully", 'Trimming')) return(NULL)
+
+  config$tmp_files <- c(config$tmp_files, paste0(trimming_result_r1_file, c("_trimmed.fq","_unpaired.fq")), paste0(trimming_result_r2_file, c("_trimmed.fq","_unpaired.fq")))
+  return(config)
+}  
+
+#########################
+######  run_BSMAP  ######
+#########################
+run_BSMAP <- function(config, config_tools){
+  trimming_result_r1_file <- file.path(config$results_path, config_tools[config_tools$proces=="trimming","temp_results_dirs"], basename_noext(config$file_r1))
+  trimming_result_r2_file <- file.path(config$results_path, config_tools[config_tools$proces=="trimming","temp_results_dirs"], basename_noext(config$file_r2))
+  mapping_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mapping","temp_results_dirs"], basename_sample(config$file_r1))
+  mapping_dir <- file.path(config$results_path, config_tools[config_tools$proces=="mapping","temp_results_dirs"],"/")
+  
+  if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".sam")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path,config$bsmap), " -r 0 -s 16 -n 1 ",
+                          " -a ", trimming_result_r1_file,"_trimmed.fq",
+                          " -b ", trimming_result_r2_file,"_trimmed.fq",
+                          " -d ", file.path(config$ref_data_path, config$ref_data_sequence_file),
+                          " -p ", min(config$threads, 8)," -o ", paste0(mapping_result_file, ".sam"))
+    runSystemCommand(config$myAppName, 'BSMAP', 'mapping', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'BSMAP', 'mapping', mapping_dir)
+  }
+  if(!checkIfFileExists(paste0(mapping_result_file, ".sam"))) return(NULL)
+
+  # Picard - SAM -> BAM
+  if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".bam")))) {
+    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem, 
+                          config$picard_parser,
+                          " -jar ", file.path(config$tools_path,config$picard), 
+                          " AddOrReplaceReadGroups",
+                          " VALIDATION_STRINGENCY=LENIENT ",
+                          " INPUT=", paste0(mapping_result_file, ".sam"),
+                          " OUTPUT=", paste0(mapping_result_file, ".bam"),
+                          " CREATE_INDEX=true",
+                          " RGID=SAMPLE RGLB=SAMPLE RGPL=illumina RGSM=SAMPLE RGPU=platform_unit")
+    runSystemCommand(config$myAppName, 'Picard', 'sam to bam conversion', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Picard', 'sam to bam conversion', mapping_dir)
+  }
+  if(!checkIfFileExists(paste0(mapping_result_file, ".bam"))) return(NULL)
+  
+  config$file_bam <- paste0(mapping_result_file, '.bam')
+  config$tmp_files <- c(config$tmp_files, paste0(mapping_result_file, c(".sam",".bam")))
+  return(config)
+}
+
+####################################
+######  run_RemoveDuplicates  ######
+####################################
+run_RemoveDuplicates <- function(config, config_tools){
+  sample_basename <- basename_sample(config$file_bam)
+  mapping_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mapping","temp_results_dirs"], basename_sample(config$file_bam))
+  
+  ######  bamtools - split
+  if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".TAG_ZS_+-.bam")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$bamtools), " split -tag ZS",
+                          " -in ", config$file_bam)
+    runSystemCommand(config$myAppName, 'Bamtools', 'split', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Bamtools', 'split', mapping_dir)
+  }
+  if(!checkIfFileExists(paste0(mapping_result_file, ".TAG_ZS_++.bam"))) return(NULL)
+  if(!checkIfFileExists(paste0(mapping_result_file, ".TAG_ZS_+-.bam"))) return(NULL)
+  if(!checkIfFileExists(paste0(mapping_result_file, ".TAG_ZS_--.bam"))) return(NULL)
+  if(!checkIfFileExists(paste0(mapping_result_file, ".TAG_ZS_-+.bam"))) return(NULL)
+  
+  ######  bamtools - merge top
+  if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".top.bam")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " merge",
+                          " -in ", paste0(mapping_result_file,".TAG_ZS_++.bam"),
+                          " -in ", paste0(mapping_result_file,".TAG_ZS_+-.bam"),
+                          " -out ", paste0(mapping_result_file,".top.bam"))
+    runSystemCommand(config$myAppName, 'Bamtools', 'merge top', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Bamtools', 'merge top', mapping_dir)
+  }
+  if(!checkIfFileExists(paste0(mapping_result_file, ".top.bam"))) return(NULL)
+  
+  ######  bamtools - merge bottom
+  if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".bottom.bam")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$bamtools), " merge",
+                          " -in ", paste0(mapping_result_file,".TAG_ZS_-+.bam"),
+                          " -in ", paste0(mapping_result_file,".TAG_ZS_--.bam"),
+                          " -out ", paste0(mapping_result_file,".bottom.bam"))
+    runSystemCommand(config$myAppName, 'Bamtools', 'merge bottom', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Bamtools', 'merge bottom', mapping_dir)
+  }
+  if(!checkIfFileExists(paste0(mapping_result_file, ".bottom.bam"))) return(NULL)
+  
+  ######  bamtools - sort top
+  if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".top.bam.sorted")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " sort",
+                          " -in ", paste0(mapping_result_file,".top.bam"), 
+                          " -out ", paste0(mapping_result_file,".top.bam.sorted"))
+    runSystemCommand(config$myAppName, 'Bamtools', 'sort top', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Bamtools', 'sort top', mapping_dir)
+  }
+  if(!checkIfFileExists(paste0(mapping_result_file, ".top.bam.sorted"))) return(NULL)
+  
+  ######  bamtools - sort bottom
+  if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".bottom.bam.sorted")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " sort ",
+                          " -in ", paste0(mapping_result_file,".bottom.bam"), 
+                          " -out ", paste0(mapping_result_file,".bottom.bam.sorted"))
+    runSystemCommand(config$myAppName, 'Bamtools', 'sort bottom', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Bamtools', 'sort bottom', mapping_dir)
+  }
+  if(!checkIfFileExists(paste0(mapping_result_file, ".bottom.bam.sorted"))) return(NULL)
+  
+  ######  picard - MarkDuplicates - top
+  rmdups_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mark_duplicates_top","temp_results_dirs"], sample_basename)
+  rmdups_logfile <- file.path(config$results_path, "logs", paste0(sample_basename, "_", config_tools[config_tools$process=="mark_duplicates_top","logfile"]))
+  rmdups_dir <- file.path(config$results_path, config_tools[config_tools$proces=="mark_duplicates_top","temp_results_dirs"])
+  if(config$overwrite_results | !(file.exists(paste0(rmdups_result_file, ".top.rmdups.bam")) & file.exists(paste0(rmdups_result_file, ".top.rmdups_metrics.txt")) &
+                                  file.exists(rmdups_logfile)
+  )) {
+    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem,
+                          config$picard_parser,
+                          " -XX:+UseG1GC -XX:MaxGCPauseMillis=100",
+                          " -jar ",file.path(config$tools_path, config$picard), 
+                          " MarkDuplicates ",
+                          " VALIDATION_STRINGENCY=LENIENT",
+                          " INPUT=", paste0(mapping_result_file,".top.bam.sorted"),
+                          " OUTPUT=", paste0(rmdups_result_file,".top.rmdups.bam"),
+                          " METRICS_FILE=",paste0(rmdups_result_file,".top.rmdups_metrics.txt"),
+                          " REMOVE_DUPLICATES=true ASSUME_SORTED=true CREATE_INDEX=true",
+                          " 2> ", rmdups_logfile)
+    runSystemCommand(config$myAppName, 'Picard', 'MarkDuplicates - top', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Picard', 'MarkDuplicates - top', rmdups_dir)
+  }
+  if(!checkIfFileExists(paste0(rmdups_result_file, ".top.rmdups.bam"))) return(NULL)
+  if(!checkIfFileExists(paste0(rmdups_result_file, ".top.rmdups_metrics.txt"))) return(NULL)
+  if(!checkIfFileExists(rmdups_logfile)) return(NULL)
+  if(!checkLog(rmdups_logfile, "MarkDuplicates done. Elapsed time:", 'MarkDuplicates - top')) return(NULL)
+  
+  ######  picard - MarkDuplicates - bottom
+  rmdups_logfile <- file.path(config$results_path, "logs", paste0(sample_basename, "_", config_tools[config_tools$process=="mark_duplicates_bottom","logfile"]))
+  if(config$overwrite_results | !(file.exists(paste0(rmdups_result_file, ".bottom.rmdups.bam")) &
+                                  file.exists(paste0(rmdups_result_file, ".bottom.rmdups_metrics.txt")) &
+                                  file.exists(rmdups_logfile)
+  )) {
+    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem,
+                          " -XX:+UseG1GC -XX:MaxGCPauseMillis=100",
+                          config$picard_parser,
+                          " -jar ",file.path(config$tools_path,config$picard), 
+                          " MarkDuplicates ",
+                          " VALIDATION_STRINGENCY=LENIENT",
+                          " INPUT=", paste0(mapping_result_file,".bottom.bam.sorted"),
+                          " OUTPUT=", paste0(rmdups_result_file,".bottom.rmdups.bam"),
+                          " METRICS_FILE=",paste0(rmdups_result_file,".bottom.rmdups_metrics.txt"),
+                          " REMOVE_DUPLICATES=true ASSUME_SORTED=true CREATE_INDEX=true",
+                          " 2> ", rmdups_logfile)
+    runSystemCommand(config$myAppName, 'Picard', 'MarkDuplicates - bottom', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Picard', 'MarkDuplicates - bottom', rmdups_dir)
+  }
+  if(!checkIfFileExists(paste0(rmdups_result_file, ".bottom.rmdups.bam"))) return(NULL)
+  if(!checkIfFileExists(paste0(rmdups_result_file, ".bottom.rmdups_metrics.txt"))) return(NULL)
+  if(!checkIfFileExists(rmdups_logfile)) return(NULL)
+  if(!checkLog(rmdups_logfile, "MarkDuplicates done. Elapsed time:", 'MarkDuplicates - bottom')) return(NULL)
+  
+  ######  bamtools - merge
+  if(config$overwrite_results | !(file.exists(paste0(rmdups_result_file,".rmdups.bam")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " merge", 
+                          " -in ", paste0(rmdups_result_file,".top.rmdups.bam"),
+                          " -in ", paste0(rmdups_result_file,".bottom.rmdups.bam"),
+                          " -out ", paste0(rmdups_result_file,".rmdups.bam"))
+    runSystemCommand(config$myAppName, 'Bamtools', 'merge', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Bamtools', 'merge',
+                file.path(config$results_path, config_tools[config_tools$proces=="merge2_bam","temp_results_dirs"],"/"))
+  }
+  if(!checkIfFileExists(paste0(rmdups_result_file,".rmdups.bam"))) return(NULL)
+
+  config$tmp_files <- c(config$tmp_files, 
+                        paste0(mapping_result_file, c(".bam",".top.bam",".bottom.bam",".TAG_ZS_++.bam",".TAG_ZS_+-.bam",".TAG_ZS_-+.bam",".TAG_ZS_--.bam",".top.bam.sorted",".bottom.bam.sorted")),
+                        paste0(rmdups_result_file, c(".top.rmdups.bam",".bottom.rmdups.bam",".top.rmdups.bai",".bottom.rmdups.bai",".rmdups.bam")))
+  return(config)
+}
+
+#############################
+######  run_FilterBAM  ######
+#############################
+run_FilterBAM <- function(config, config_tools){
+  sample_basename <- basename_sample(config$file_bam)
+  rmdups_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mark_duplicates_top","temp_results_dirs"], sample_basename)
+
+  ######  bamtools - filter
+  filtered_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="filter_bam","temp_results_dirs"], sample_basename)
+  if(config$overwrite_results | !(file.exists(paste0(filtered_result_file,".filtered.bam")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " filter -isMapped true -isPaired true -isProperPair true -forceCompression",
+                          " -in ", paste0(rmdups_result_file,".rmdups.bam"), 
+                          " -out ", paste0(filtered_result_file,".filtered.bam"))
+    runSystemCommand(config$myAppName, 'Bamtools', 'filter', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Bamtools', 'filter',
+                file.path(config$results_path, config_tools[config_tools$proces=="filter_bam","temp_results_dirs"],"/"))
+  }
+  if(!checkIfFileExists(paste0(filtered_result_file,".filtered.bam"))) return(NULL)
+  
+  ######  Samtools - flagstat flagstat_filtered_bam
+  flagstat_result_file <- file.path(file.path(config$results_path,"logs"), paste0(sample_basename,"_",config_tools[config_tools$process=="flagstat_filtered_bam","logfile"]))
+  if(config$overwrite_results | !(file.exists(paste0(flagstat_result_file)))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools), " flagstat ",  
+                          paste0(filtered_result_file,".filtered.bam"), 
+                          " 1> ", flagstat_result_file)
+    runSystemCommand(config$myAppName, 'Samtools', 'flagstat', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Samtools', 'flagstat', file.path(config$results_path,"logs","/"))
+  }
+  if(!checkIfFileExists(flagstat_result_file)) return(NULL)
+  
+  config$tmp_files <- c(config$tmp_files, paste0(filtered_result_file,".filtered.bam"))
+  return(config)
+}
+
+###############################
+######  run_ClipOverlap  ######
+###############################
+run_ClipOverlap <- function(config, config_tools){
+  sample_basename <- basename_sample(config$file_bam)
+  filtered_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="filter_bam","temp_results_dirs"], sample_basename)
+  
+  ######  bamUtil - clipOverlap
+  clipping_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="clip_overlap","temp_results_dirs"], sample_basename)
+  clipOverlap_logfile <- file.path(file.path(config$results_path,"logs"),paste0(sample_basename,"_",config_tools[config_tools$process=="clip_overlap","logfile"]))
+  if(config$overwrite_results | !(file.exists(paste0(clipping_result_file,".clipped.bam")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$bamUtil), " clipOverlap --stats",
+                          " --in ",  paste0(filtered_result_file,".filtered.bam"),
+                          " --out ", paste0(clipping_result_file,".clipped.bam"), 
+                          " 2> ", clipOverlap_logfile)
+    runSystemCommand(config$myAppName, 'BamUtil', 'clipOverlap', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'BamUtil', 'clipOverlap',
+                file.path(config$results_path, config_tools[config_tools$proces=="clip_overlap","temp_results_dirs"],"/"))
+  }
+  
+  if(!checkIfFileExists(paste0(clipping_result_file,".clipped.bam"))) return(NULL)
+  if(!checkLog(clipOverlap_logfile, "Completed ClipOverlap Successfully.", 'BamUtil - clipOverlap')) return(NULL)
+
+  ######  samtools - index
+  if(config$overwrite_results | !(file.exists(paste0(clipping_result_file,".clipped.bam.bai")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools), " index ", paste0(clipping_result_file,".clipped.bam"))
+    runSystemCommand(config$myAppName, 'Samtools', 'index', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Samtools', 'index',
+                file.path(config$results_path, config_tools[config_tools$proces=="clip_overlap","temp_results_dirs"],"/"))
+  }
+  
+  if(!checkIfFileExists(paste0(clipping_result_file,".clipped.bam.bai"))) return(NULL)
+    
+  return(config)
+}
+
+##################################
+######  run_MappingMetrics  ######
+##################################
+run_MappingMetrics <- function(config, config_tools){
+  sample_basename <- basename_sample(config$file_bam)
+  filtered_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="filter_bam","temp_results_dirs"], sample_basename)
+  rmdups_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mark_duplicates_top","temp_results_dirs"], sample_basename)
+
+  ######  picard - Basic Mapping Metrics
+  basic_mapping_metrics_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="basic_mapping_metrics","temp_results_dirs"], sample_basename)
+  if(config$overwrite_results | !(file.exists(paste0(basic_mapping_metrics_result_file,"_basic_mapping_metrics.txt")))) {
+    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem, 
+                          config$picard_parser,
+                          " -jar ", file.path(config$tools_path,config$picard), 
+                          " CollectAlignmentSummaryMetrics ",
+                          " VALIDATION_STRINGENCY=LENIENT",
+                          " METRIC_ACCUMULATION_LEVEL=ALL_READS ",
+                          " INPUT=", paste0(rmdups_result_file,".rmdups.bam"), 
+                          " OUTPUT=", paste0(basic_mapping_metrics_result_file,"_basic_mapping_metrics.txt"),
+                          " REFERENCE_SEQUENCE=", file.path(config$ref_data_path, config$ref_data_sequence_file))
+    runSystemCommand(config$myAppName, 'Picard', 'Basic Mapping Metrics', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Picard', 'Basic Mapping Metrics',
+                file.path(config$results_path, config_tools[config_tools$proces=="basic_mapping_metrics","temp_results_dirs"],"/"))
+  }
+  if(!checkIfFileExists(paste0(basic_mapping_metrics_result_file,"_basic_mapping_metrics.txt"))) return(NULL)
+
+  ######  picard - Insert Size Metrics
+  insert_size_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="insert_size","temp_results_dirs"], sample_basename)
+  if(config$overwrite_results | !(file.exists(paste0(insert_size_result_file,"_insert_size_metrics.txt")))) {
+    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem, 
+                          config$picard_parser,
+                          " -jar ", file.path(config$tools_path, config$picard), 
+                          " CollectInsertSizeMetrics ",
+                          " VALIDATION_STRINGENCY=LENIENT ",
+                          " Histogram_FILE=", paste0(insert_size_result_file,"_insert_size_plot.pdf"),
+                          " INPUT=", paste0(filtered_result_file,".filtered.bam"),
+                          " OUTPUT=", paste0(insert_size_result_file,"_insert_size_metrics.txt"))
+    runSystemCommand(config$myAppName, 'Picard', 'Insert Size', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'Picard', 'Insert Size',
+                file.path(config$results_path, config_tools[config_tools$proces=="insert_size","temp_results_dirs"],"/"))
+  }
+  if(!checkIfFileExists(paste0(insert_size_result_file,"_insert_size_metrics.txt"))) return(NULL)
+  
+  ######  On-target reads (BEDTools - intersect)
+  on_target_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="on_target_reads","temp_results_dirs"], sample_basename)
+  if(config$overwrite_results | !(file.exists(paste0(on_target_result_file,"_on_target_reads")))) {
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
+                          " intersect -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"), 
+                          " -b ", file.path(config$ref_data_path, config$ref_data_intervals_file), 
+                          " > ",paste0(on_target_result_file, "_on_target_reads"))
+    runSystemCommand(config$myAppName, 'BEDTools', 'Intersect on_target_reads', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'BEDTools', 'Intersect on_target_reads',
+                file.path(config$results_path, config_tools[config_tools$proces=="on_target_reads","temp_results_dirs"],"/"))
+  }
+  if(!checkIfFileExists(paste0(on_target_result_file,"_on_target_reads"))) return(NULL)
+  
+  #save result SAMPLE_on_target_reads.txt file
+  number_of_on_target_reads <- getLinesNumber(paste0(on_target_result_file,"_on_target_reads"))
+  on_target_params <- list(number_of_on_target_reads = as.character(number_of_on_target_reads))
+  yaml::write_yaml(on_target_params, paste0(on_target_result_file,"_on_target_reads.txt"))
+  
+  config$tmp_files <- c(config$tmp_files, paste0(on_target_result_file,"_on_target_reads"))
+  return(config)
+}
+
+##################################
+######  run_DepthOfCoverage  #####
+##################################
+run_DepthOfCoverage <- function(config, config_tools){
+  sample_basename <- basename_sample(config$file_bam)
+  clipping_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="clip_overlap","temp_results_dirs"], sample_basename)
+  
+  ######  gatk - DepthOfCoverage
+  depth_of_cov_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="depth_of_coverage","temp_results_dirs"], sample_basename)
+  gatk_depth_logfile <- file.path(file.path(config$results_path,"logs"), paste0(sample_basename, "_", config_tools[config_tools$process=="depth_of_coverage","logfile"]))
+  if(config$overwrite_results | !(file.exists(paste0(depth_of_cov_result_file,"_gatk_target_coverage")) &
+                                  file.exists(paste0(depth_of_cov_result_file,"_gatk_target_coverage.sample_summary")) & file.exists(gatk_depth_logfile))){
+    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem,
+                          " -jar ", file.path(config$tools_path, config$gatk),
+                          " -T DepthOfCoverage -R ", file.path(config$ref_data_path, config$ref_data_sequence_file), 
+                          " -I ", paste0(clipping_result_file,".clipped.bam"),
+                          " -o ", paste0(depth_of_cov_result_file,"_gatk_target_coverage"),
+                          " -L ", file.path(config$ref_data_path, config$ref_data_intervals_file),
+                          " -ct 1 -ct 10 -ct 20", 
+                          " > ", gatk_depth_logfile)
+    runSystemCommand(config$myAppName, 'GATK', 'depth_of_coverage', src_command, config$verbose)
+  }else{
+    skipProcess(config$myAppName, 'GATK', 'depth_of_coverage',
+                file.path(config$results_path, config_tools[config_tools$proces=="depth_of_coverage","temp_results_dirs"],"/"))
+  }
+  if(!checkIfFileExists(paste0(depth_of_cov_result_file,"_gatk_target_coverage"))) return(NULL)
+  if(!checkIfFileExists(paste0(depth_of_cov_result_file,"_gatk_target_coverage.sample_summary"))) return(NULL)
+  if(!checkIfFileExists(gatk_depth_logfile)) return(NULL)
+  
+  config$tmp_files <- c(config$tmp_files, paste0(depth_of_cov_result_file, c("_gatk_target_coverage","_gatk_target_coverage.sample_cumulative_coverage_counts",
+                                                           "_gatk_target_coverage.sample_interval_summary","_gatk_target_coverage.sample_cumulative_coverage_proportions",
+                                                           "_gatk_target_coverage.sample_interval_statistics")))
+  return(config)
+}
+
+##################################
+######  run_CalcMethylation  #####
+##################################
+run_CalcMethylation <- function(config, config_tools){
+  sample_basename <- basename_sample(config$file_bam)
+  clipping_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="clip_overlap","temp_results_dirs"], sample_basename)
+  clipping_result_file_bed <- paste0(clipping_result_file,".clipped.bed")
+  
+  ######  python - methratio (BSMAP)
+  methyl_result_file <- paste0(file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"], sample_basename),".methylation_results.bed")
+  methratio_logfile <- file.path(file.path(config$results_path,"logs"),paste0(sample_basename,"_",config_tools[config_tools$process=="methratio","logfile"]))
+  
+  if(config$overwrite_results | !(file.exists(methyl_result_file) & file.exists(methratio_logfile))) {
+    print(paste0("Conversion of input clipped.bam to clipped.bed [bamToBed]..."))
+    src_command <- paste0(file.path(config$anaconda_bin_path,"bamToBed")," -i ", clipping_result_file,".clipped.bam"," > ", clipping_result_file_bed)
+    runSystemCommand(config$myAppName, 'bedtools', 'bamToBed', src_command, config$verbose)
+    
+    print(paste0("Reading sample chromosomes..."))
+    sample_chr <- getSampleChr(clipping_result_file_bed)
+    print(sample_chr)
+    chr_output_files <- list()
+    logAppend <- ">"
+    for(i in 1:length(sample_chr)){
+      print(paste0("##### Running methratio for chr: '",sample_chr[i],"' #####"))
+      current_output <- str_replace(methyl_result_file, ".methylation_results.bed", paste0(".methylation_results.",sample_chr[i],".txt"))
+      chr_output_files[[i]] <- current_output
+      src_command <- paste0(config$python2, " ", file.path(config$tools_path, config$methratio), 
+                            " -c ", sample_chr[i]," -d ", file.path(config$ref_data_path, config$ref_data_sequence_file), 
+                            #" -s ", config$anaconda_bin_path,
+                            " -m 1 -z -i skip", 
+                            " -o ", current_output, " ", paste0(clipping_result_file,".clipped.bam"),
+                            " 2",logAppend," ", methratio_logfile)
+      runSystemCommand(config$myAppName, 'BSMAP', 'methratio', src_command, config$verbose)
+      logAppend <- ">>"
+    }
+    chr_output_files <- unlist(chr_output_files)
+  }else{
+    skipProcess(config$myAppName, 'BSMAP', 'methratio',
+                file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"],"/"))
+  }
+  if(!checkIfFileExists(methratio_logfile)) return(NULL)
+  if(!all(sapply(c(chr_output_files), checkIfFileExists))){
+    cat(paste0(readLines(methratio_logfile),"\n"))
+    return(NULL)
+  }
+  
+  methyl_result_data <- list()
+  ######  Make bed file out of methyl results
+  print(paste0("File conversion txt -> bed"))
+  for(i in 1:length(chr_output_files)){
+    print(paste0("Reading the file: ", chr_output_files[i]))
+    methyl_result_data[[i]] <- data.table::fread(chr_output_files[i], header = T, sep = '\t')
+  }
+  methyl_result_data <- data.table::rbindlist(methyl_result_data)
+  methyl_result_data$end <- methyl_result_data$pos
+  methyl_result_data <- methyl_result_data[,c("chr","pos","end","context","ratio","strand","eff_CT_count","C_count", "CT_count")]
+  names(methyl_result_data) <- getMethylDataHeader(version = 2, size = 9)
+  #head(methyl_result_data)
+  #summary(methyl_result_data)
+  if(nrow(methyl_result_data) == 0){
+    print(paste0("Error! methyl_result_data is empty!"))
+    print(paste0("QC Report of the Sample: ", sample_basename))
+    sampleQC <- getSampleQCSummary(sample_basename, config, save = F)
+    print(qc2dataframe(sampleQC))
+    return(NULL)
+  }else{
+    print(paste0("Number of numCs > 0: ", length(methyl_result_data$numCs[methyl_result_data$numCs > 0])))
+    print(head(methyl_result_data[methyl_result_data$numCs > 0,],5))
+    print(paste0("Number of numCs > 1: ", length(methyl_result_data$numCs[methyl_result_data$numCs > 1])))
+    print(head(methyl_result_data[methyl_result_data$numCs > 1,],5))
+  }
+  methyl_result_prime_file <- str_replace(methyl_result_file,".methylation_results.bed",".methylation_results.prime.bed")
+  print(paste0("Saving the file: ",methyl_result_prime_file))
+  data.table::fwrite(methyl_result_data, file = methyl_result_prime_file, quote=FALSE, sep='\t', row.names = F, col.names = F)
+  
+  ######  BEDTools - intersect capture region (only if file is defined)
+  if(str_trim(config$ref_data_intervals_file) != ''){
+    if(config$overwrite_results | !(file.exists(methyl_result_file))) {
+      src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
+                            " intersect -bed -abam ",  methyl_result_prime_file, 
+                            " -b ", file.path(config$ref_data_path, config$ref_data_intervals_file),
+                            " -u > ", methyl_result_file)
+      runSystemCommand(config$myAppName, 'BEDTools', 'intersect - capture region', src_command, config$verbose)
+    }else{
+      skipProcess(config$myAppName, 'BEDTools', 'intersect - capture region',
+                  file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"],"/"))
+    }
+    if(!checkIfFileExists(methyl_result_file)) return(NULL)
+  }else{
+    file.rename(methyl_result_prime_file, methyl_result_file)
+  }
+
+  print(paste0("Final conversion of methylations..."))
+  #finish the methylation file and save rds version
+  methyl_result_data <- readMethResult(methyl_result_file, version = 2)
+  methyl_result_data$posCs <- methyl_result_data$start 
+  # lets make end = start
+  methyl_result_data$end <- methyl_result_data$start
+  # for positive strand end++ (end = start + 1)
+  methyl_result_data$end[methyl_result_data$strand == '+'] <- methyl_result_data$end[methyl_result_data$strand == '+'] + 1
+  # for negative strand start-- (end = start - 1)
+  methyl_result_data$start[methyl_result_data$strand == '-'] <- methyl_result_data$start[methyl_result_data$strand == '-'] - 1
+  
+  print(paste0("Saving final methylation files: ",methyl_result_file, " and ", gsub(".bed",".rds", methyl_result_file)))
+  #save bed file
+  data.table::fwrite(methyl_result_data, methyl_result_file, quote=FALSE, sep='\t', row.names = F, col.names = F)
+  #save rds file
+  saveRDS(methyl_result_data, str_replace(methyl_result_file, "methylation_results.bed","methylation_results.rds"))
+  
+  config$tmp_files <- c(config$tmp_files, clipping_result_file_bed, chr_output_files, methyl_result_prime_file)
+  return(config)
+}
