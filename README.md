@@ -188,7 +188,6 @@ wget -c -O ./input/small_FAKE03_R1.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth
 wget -c -O ./input/small_FAKE03_R2.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth/input/small_FAKE03_R2.fastq;
 ```
 
-
 ## The Docker
 CytoMeth project is also available as a docker. The CytoMeth docker is a virtual machine that contains all the environment (apps and libraries) ready to run CytoMeth. To download and run CytoMeth docker please install Docker app from https://www.docker.com/
 
@@ -196,14 +195,23 @@ CytoMeth project is also available as a docker. The CytoMeth docker is a virtual
 To build your own docker use *build* command and after the successful creation the docker is ready to run. Pleaese notice building of the docker may take tens of minutes because the proper environment must be created from the scratch, however it must be done only once.
 ```bash
 docker build -t cytometh .
-docker run -it cytometh /bin/bash
 ```
 
 ### Downloading the docker from Docker Hub
-The docker is also publicly available on Docker Hub and to download it you just need to pull it.
+The docker ready to go is also publicly available on Docker Hub and can be pulled to your system by the command below.
 ```bash
 docker pull mdraminski/cytometh
+```
+
+### Running the docker
+To run the docker that is already built in your system or pulled from Docker Hub type the command below.
+```bash
 docker run -it cytometh /bin/bash
+```
+
+To run the docker that shares the folder between host system and the docker it is needed to specify it right after '-v' parameter e.g. to share Desktop folder in your home folder run the command below.
+```bash
+docker run -it -v ~/Desktop:/Desktop cytometh /bin/bash
 ```
 
 ### Reference data
