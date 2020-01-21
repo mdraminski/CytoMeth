@@ -31,22 +31,23 @@ readConfig <- function(file = "config.yml", tools.file = "./tools/tools.conf.yml
 # fixMachineConfig
 #########################################
 #check if the machine can run hardware parameters defined in config.yml [mem_max in GB]
+#config <- conf;
 fixMachineConfig <- function(config, thread_max = 16, mem_max = 32){
-  mem_unit <- "GB"
+  mem_unit <- "G"
   mem_mult <- 1e+9
 
   defined_memory <- si2f(config$java_mem)
   total_ram <- as.numeric(benchmarkme::get_ram())
   if(total_ram < si2f(config$java_mem) || is.na(defined_memory)){
-    defined_memory <- min(round((total_ram * 0.75)/mem_mult), mem_max)
-    warning(paste0("Size of detected memory [",round(total_ram/mem_mult)," ", mem_unit, "] is lower than set up [",config$java_mem,"] in 'config.yml' file. Switching to ", defined_memory," ",mem_unit))
+    defined_memory <- paste0(min(round((total_ram * 0.75)/mem_mult), mem_max),mem_unit)
+    warning(paste0("Size of detected memory: ",round(total_ram/mem_mult), mem_unit, " is lower than set up ",config$java_mem," in 'config.yml' file. Switching to: ", defined_memory))
     config$java_mem <- defined_memory
   }
   
   cpu_threads <- benchmarkme::get_cpu()$no_of_cores
   if(cpu_threads < config$threads){
     new_threads <- min(cpu_threads - 1, thread_max)
-    warning(paste0("Number of detected CPU threads [",cpu_threads,"] is lower than set up threads [",config$threads,"] in 'config.yml' file. Switching to ",new_threads, " threads"))
+    warning(paste0("Number of detected CPU threads: ",cpu_threads," is lower than set up threads: ",config$threads," in 'config.yml' file. Switching to: ",new_threads, " threads"))
     config$threads <- new_threads
   }
   return(config)
