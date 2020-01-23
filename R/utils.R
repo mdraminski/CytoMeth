@@ -33,17 +33,24 @@ readConfig <- function(file = "config.yml", tools.file = "./tools/tools.conf.yml
 #check if the machine can run hardware parameters defined in config.yml [mem_max in GB]
 #config <- conf;
 fixMachineConfig <- function(config, thread_max = 16, mem_max = 32){
-  mem_unit <- "G"
   mem_mult <- 1e+9
 
-  defined_memory <- si2f(config$java_mem)
+  defined_memory <- si2f(config$memory)
   total_ram <- as.numeric(benchmarkme::get_ram())
-  if(total_ram < si2f(config$java_mem) || is.na(defined_memory)){
-    defined_memory <- paste0(min(round((total_ram * 0.75)/mem_mult), mem_max),mem_unit)
-    warning(paste0("Size of detected memory: ",round(total_ram/mem_mult), mem_unit, " is lower than set up ",config$java_mem," in 'config.yml' file. Switching to: ", defined_memory))
-    config$java_mem <- defined_memory
+  opt_memory <- min(round((total_ram * 0.75)), mem_max*mem_mult)
+  if(is.na(defined_memory)){
+    warning(paste0("Memory detected: ",f2sig(total_ram), ". Memory definition in 'config.yml' is broken: ",config$memory,". Switching to: ", f2sig(opt_memory)))
+    config$memory <- opt_memory
+  }else if(total_ram < si2f(config$memory)){
+    warning(paste0("Memory detected: ",f2sig(total_ram), " is lower than defined in 'config.yml' file: ",f2sig(config$memory),". Switching to: ", f2sig(opt_memory)))
+    config$memory <- opt_memory
+  }else if(si2f(config$memory) < (6*mem_mult)){
+    warning(paste0("Memory detected: ",f2sig(total_ram), ". Memory definition in 'config.yml' is too low: ",f2sig(config$memory),". It is highly recommended to use at least: 6G"))
+    config$memory <- defined_memory
+  }else{
+    config$memory <- defined_memory
   }
-  
+
   cpu_threads <- benchmarkme::get_cpu()$no_of_cores
   if(cpu_threads < config$threads){
     new_threads <- min(cpu_threads - 1, thread_max)
@@ -68,7 +75,21 @@ si2f <- function(x){
   }
   return(x)
 }
-
+#########################################
+# f2sig
+#########################################
+f2sig <- function(x){
+  if (x < 1000000)
+    return (paste0(floor(x/1000),'k'))
+  else if (x < 1000000000)
+    return (paste0(floor(x/1000000),'M'))
+  else if (x < 1000000000000)
+    return (paste0(floor(x/1000000000),'G'))
+  else if (x < 1000000000000000)
+    return (paste0(floor(x/1000000000000),'T'))
+  else
+    return (x)
+}
 #########################################
 # readCondaPath
 #########################################
@@ -556,4 +577,21 @@ getRefChr <- function(filepath, buff = 100000) {
   return(chrlines)
 }
 
-
+######################################
+######## GET BSMAP IndexInterval  ####
+getBSMAPIndexInterval <- function(mem_size){
+  mem_size <- mem_size/1e+09
+  if(mem_size <= 8){
+    indexInterval <- 16
+  }else if(mem_size <= 12){
+    indexInterval <- 8
+  }else if(mem_size <= 16){
+    indexInterval <- 4
+  }else if(mem_size <= 24){
+    indexInterval <- 2
+  }else{
+    indexInterval <- 1
+  }
+  indexInterval <- paste0("-I ", indexInterval)
+  return(indexInterval)
+}

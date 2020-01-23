@@ -1,7 +1,7 @@
 ### General Params
 verbose: TRUE
-threads: 12
-java_mem: 16G
+threads: 8
+memory: 16G
 overwrite_results: TRUE
 clean_tmp_files: TRUE
 plot_format: "pdf"

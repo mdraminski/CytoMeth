@@ -1,5 +1,10 @@
 CytoMeth - Changes
 =============
+## Version 0.9.17
+* param java_mem is now memory
+* BSMAP uses I parameter (automatically set up based on available memory)
+* manual updated
+
 ## Version 0.9.16
 * bam files can be used as an input
 * less memory usage during CalcMethylation Step

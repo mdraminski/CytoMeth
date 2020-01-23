@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y \
 locales \
 default-jdk \
 nano \
+vim \
 wget \
 zip \
 unzip \

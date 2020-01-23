@@ -63,7 +63,7 @@ run_Trimmomatic <- function(config, config_tools){
                                   file.exists(paste0(trimming_result_r1_file,"_unpaired.fq")) & file.exists(paste0(trimming_result_r2_file,"_unpaired.fq")) &
                                   file.exists(trimmomatic_out_logfile)
   )){
-    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem," -jar ", file.path(config$tools_path,config$trimmomatic),
+    src_command <- paste0("java -Xms", f2sig(config$memory)," -Xmx", f2sig(config$memory)," -jar ", file.path(config$tools_path,config$trimmomatic),
                           " PE -threads ",config$threads," -phred33 ",config$file_r1," ", config$file_r2," ",
                           trimming_result_r1_file,"_trimmed.fq ", trimming_result_r1_file,"_unpaired.fq ",
                           trimming_result_r2_file,"_trimmed.fq ", trimming_result_r2_file,"_unpaired.fq ",
@@ -97,6 +97,7 @@ run_BSMAP <- function(config, config_tools){
   
   if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".sam")))) {
     src_command <- paste0(file.path(config$anaconda_bin_path,config$bsmap), " -r 0 -s 16 -n 1 ",
+                          getBSMAPIndexInterval(config$memory),
                           " -a ", trimming_result_r1_file,"_trimmed.fq",
                           " -b ", trimming_result_r2_file,"_trimmed.fq",
                           " -d ", file.path(config$ref_data_path, config$ref_data_sequence_file),
@@ -109,7 +110,7 @@ run_BSMAP <- function(config, config_tools){
 
   # Picard - SAM -> BAM
   if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".bam")))) {
-    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem, 
+    src_command <- paste0("java -Xms", f2sig(config$memory)," -Xmx", f2sig(config$memory), 
                           config$picard_parser,
                           " -jar ", file.path(config$tools_path,config$picard), 
                           " AddOrReplaceReadGroups",
@@ -202,7 +203,7 @@ run_RemoveDuplicates <- function(config, config_tools){
   if(config$overwrite_results | !(file.exists(paste0(rmdups_result_file, ".top.rmdups.bam")) & file.exists(paste0(rmdups_result_file, ".top.rmdups_metrics.txt")) &
                                   file.exists(rmdups_logfile)
   )) {
-    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem,
+    src_command <- paste0("java -Xms", f2sig(config$memory)," -Xmx", f2sig(config$memory),
                           config$picard_parser,
                           " -XX:+UseG1GC -XX:MaxGCPauseMillis=100",
                           " -jar ",file.path(config$tools_path, config$picard), 
@@ -228,7 +229,7 @@ run_RemoveDuplicates <- function(config, config_tools){
                                   file.exists(paste0(rmdups_result_file, ".bottom.rmdups_metrics.txt")) &
                                   file.exists(rmdups_logfile)
   )) {
-    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem,
+    src_command <- paste0("java -Xms", f2sig(config$memory)," -Xmx", f2sig(config$memory),
                           " -XX:+UseG1GC -XX:MaxGCPauseMillis=100",
                           config$picard_parser,
                           " -jar ",file.path(config$tools_path,config$picard), 
@@ -352,7 +353,7 @@ run_MappingMetrics <- function(config, config_tools){
   ######  picard - Basic Mapping Metrics
   basic_mapping_metrics_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="basic_mapping_metrics","temp_results_dirs"], sample_basename)
   if(config$overwrite_results | !(file.exists(paste0(basic_mapping_metrics_result_file,"_basic_mapping_metrics.txt")))) {
-    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem, 
+    src_command <- paste0("java -Xms", f2sig(config$memory)," -Xmx", f2sig(config$memory), 
                           config$picard_parser,
                           " -jar ", file.path(config$tools_path,config$picard), 
                           " CollectAlignmentSummaryMetrics ",
@@ -371,7 +372,7 @@ run_MappingMetrics <- function(config, config_tools){
   ######  picard - Insert Size Metrics
   insert_size_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="insert_size","temp_results_dirs"], sample_basename)
   if(config$overwrite_results | !(file.exists(paste0(insert_size_result_file,"_insert_size_metrics.txt")))) {
-    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem, 
+    src_command <- paste0("java -Xms", f2sig(config$memory)," -Xmx", f2sig(config$memory), 
                           config$picard_parser,
                           " -jar ", file.path(config$tools_path, config$picard), 
                           " CollectInsertSizeMetrics ",
@@ -421,7 +422,7 @@ run_DepthOfCoverage <- function(config, config_tools){
   gatk_depth_logfile <- file.path(file.path(config$results_path,"logs"), paste0(sample_basename, "_", config_tools[config_tools$process=="depth_of_coverage","logfile"]))
   if(config$overwrite_results | !(file.exists(paste0(depth_of_cov_result_file,"_gatk_target_coverage")) &
                                   file.exists(paste0(depth_of_cov_result_file,"_gatk_target_coverage.sample_summary")) & file.exists(gatk_depth_logfile))){
-    src_command <- paste0("java -Xms", config$java_mem," -Xmx", config$java_mem,
+    src_command <- paste0("java -Xms", f2sig(config$memory)," -Xmx", f2sig(config$memory),
                           " -jar ", file.path(config$tools_path, config$gatk),
                           " -T DepthOfCoverage -R ", file.path(config$ref_data_path, config$ref_data_sequence_file), 
                           " -I ", paste0(clipping_result_file,".clipped.bam"),

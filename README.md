@@ -198,21 +198,24 @@ docker build -t cytometh .
 ```
 
 ### Downloading the docker from Docker Hub
-The docker ready to go is also publicly available on Docker Hub and can be pulled to your system by the command below.
+The docker ready to go is also publicly available on Docker Hub and can be pulled to your system by the command below. The second command adds a new docker tag so the name of the local docker image is cytometh instead of inconvenient e.g. mdraminski/cytometh:1.
 ```bash
 docker pull mdraminski/cytometh:1
+docker tag mdraminski/cytometh:1 cytometh
 ```
 
 ### Running the docker
-To run the docker that is already built in your system or pulled from Docker Hub type the command below.
+To run the docker that is already built in your system or pulled from Docker Hub type the command below. Please notice that you are running fresh virtual machine session and this image does not yet contain '*input*' and '*referenceData*' folders. However they may be created and filled by '*install.data.sh*' script (See below '*Reference data*' section).
 ```bash
 docker run -it cytometh /bin/bash
 ```
-
-To run the docker that shares the folder between host system and the docker it is needed to specify it right after '-v' parameter e.g. to share Desktop folder in your home folder run the command below.
+Notice all data that you download or create (e.g. results) within the docker session is available until its shut down. Therefore it is highly recomennded to share the folder between the docker and the host system (for data and results transfer). To run the docker that shares the folder between host system and the docker it is needed to specify it right after '-v' parameter e.g. to share Desktop folder in your home folder run the command below: 
 ```bash
 docker run -it -v ~/Desktop:/Desktop cytometh /bin/bash
 ```
+
+### Quit from the docker
+To shut down the virtual machine type command 'exit'. It is similar as quiting from ssh session.
 
 ### Reference data
 Reference data is several Gigabytes big therefore it is not included in any parent docker. However after successful running of the docker you can download the data by running '*install.data.sh*' script in the CytoMeth main directory. 
@@ -231,8 +234,8 @@ The file '*config.yml*' contains CytoMeth input parameters and before use of Cyt
 ```bash
 #General Params
 verbose: TRUE
-threads: 12
-java_mem: 16G
+threads: 8
+memory: 16G
 overwrite_results: FALSE
 clean_tmp_files: TRUE
 plot_format: "pdf"
@@ -259,7 +262,7 @@ Input parameters:
 
 - verbose - prints additional info and commands on the screen
 - threads - defines number of threads used by tools. Most of the tools does not gain any processing speed for more than 10-12  threads.
-- java_mem - amount of memory dedicated to Java tools. If you face Java 'out of memory' error please increase the parameter.
+- memory - amount of memory dedicated to Java and other tools. If you see Java 'out of memory' error or any sudden stop of the program please increase the parameter. The minimum amount that is recommended for human genome analysis is 6GB. Plese use one of the following sufixes: 'M', 'G', 'T' (case sensitive: mega, giga, tera).
 - overwrite_results - if TRUE then all result files from the sample processed again will be overwritten. If FALSE CytoMeth will skip phases that related phase result file exists in apriopriate results_path.
 - clean_tmp_files - if TRUE all useless temporary files will be removed after the processing of the sample.
 - plot_format - set up plot format of report files. Available formats: 'pdf','png', 'eps', 'tiff', 'jpg'.
