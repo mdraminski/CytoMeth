@@ -136,6 +136,7 @@ run_BSMAP <- function(config, config_tools){
 run_RemoveDuplicates <- function(config, config_tools){
   sample_basename <- basename_sample(config$file_bam)
   mapping_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mapping","temp_results_dirs"], basename_sample(config$file_bam))
+  mapping_dir <- file.path(config$results_path, config_tools[config_tools$proces=="mapping","temp_results_dirs"],"/")
   
   ######  bamtools - split
   if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".TAG_ZS_+-.bam")))) {
@@ -468,7 +469,7 @@ run_CalcMethylation <- function(config, config_tools){
     chr_output_files <- list()
     logAppend <- ">"
     for(i in 1:length(sample_chr)){
-      print(paste0("##### Running methratio for chr: '",sample_chr[i],"' #####"))
+      print(paste0("##### Running methratio for chr: '",sample_chr[i],"' [",i,"/",length(sample_chr),"] #####"))
       current_output <- str_replace(methyl_result_file, ".methylation_results.bed", paste0(".methylation_results.",sample_chr[i],".txt"))
       chr_output_files[[i]] <- current_output
       src_command <- paste0(config$python2, " ", file.path(config$tools_path, config$methratio), 
@@ -476,7 +477,7 @@ run_CalcMethylation <- function(config, config_tools){
                             #" -s ", config$anaconda_bin_path,
                             " -m 1 -z -i skip", 
                             " -o ", current_output, " ", paste0(clipping_result_file,".clipped.bam"),
-                            " 2",logAppend," ", methratio_logfile)
+                            " 2", logAppend," ", methratio_logfile)
       runSystemCommand(config$myAppName, 'BSMAP', 'methratio', src_command, config$verbose)
       logAppend <- ">>"
     }
@@ -507,7 +508,7 @@ run_CalcMethylation <- function(config, config_tools){
   if(nrow(methyl_result_data) == 0){
     print(paste0("Error! methyl_result_data is empty!"))
     print(paste0("QC Report of the Sample: ", sample_basename))
-    sampleQC <- getSampleQCSummary(sample_basename, config, save = F)
+    sampleQC <- getSampleQCSummary(sample_basename, config)
     print(qc2dataframe(sampleQC))
     return(NULL)
   }else{
@@ -550,7 +551,7 @@ run_CalcMethylation <- function(config, config_tools){
   
   print(paste0("Saving final methylation files: ",methyl_result_file, " and ", gsub(".bed",".rds", methyl_result_file)))
   #save bed file
-  data.table::fwrite(methyl_result_data, methyl_result_file, quote=FALSE, sep='\t', row.names = F, col.names = F)
+  data.table::fwrite(methyl_result_data, methyl_result_file, quote=FALSE, sep='\t', row.names = F, col.names = F, scipen=50)
   #save rds file
   saveRDS(methyl_result_data, str_replace(methyl_result_file, "methylation_results.bed","methylation_results.rds"))
   

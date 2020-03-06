@@ -1,5 +1,10 @@
 CytoMeth - Changes
 =============
+## Version 0.9.18
+* some rare issues in exporting to bed file fixed
+* improved continuation of calculation after the stop
+* logging on the screen improved
+
 ## Version 0.9.17
 * param java_mem is now memory
 * BSMAP uses I parameter (automatically set up based on available memory)

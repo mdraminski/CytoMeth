@@ -79,14 +79,14 @@ si2f <- function(x){
 # f2sig
 #########################################
 f2sig <- function(x){
-  if (x < 1000000)
+  if (x < 1e+06)
     return (paste0(floor(x/1000),'k'))
-  else if (x < 1000000000)
-    return (paste0(floor(x/1000000),'M'))
-  else if (x < 1000000000000)
-    return (paste0(floor(x/1000000000),'G'))
-  else if (x < 1000000000000000)
-    return (paste0(floor(x/1000000000000),'T'))
+  else if (x < 1e+09)
+    return (paste0(floor(x/1e+06),'M'))
+  else if (x < 1e+12)
+    return (paste0(floor(x/1e+09),'G'))
+  else if (x < 1e+15)
+    return (paste0(floor(x/1e+12),'T'))
   else
     return (x)
 }
@@ -446,7 +446,7 @@ filterMethResult <- function(methyl_data, ref_sequence_name = NULL, context = c(
 ###############################
 # convertMethResult
 ###############################
-#methyl_data <- mymeth
+#methyl_data <- methData[[i]]
 convertMethResult <- function(methyl_data, assembly='hg38', resolution='base'){
   methyl_data <- new("methylRaw", methyl_data %>% dplyr::select(-context, -betaVal) %>% data.table(), 
       sample.id=attr(methyl_data, 'sample_name'), assembly=assembly, context=attr(methyl_data, "context"), resolution=resolution)
@@ -455,6 +455,7 @@ convertMethResult <- function(methyl_data, assembly='hg38', resolution='base'){
 
 ##############################################
 ######## Read data to MethylKit ############
+#conf <- config; context = c("CHG","CHH"); context_label = 'non-CpG'; min_coverage = 10;result_format = c('bed','rds');
 readMethData <- function(config, context = c("CG","CHG","CHH"), context_label = NULL, min_coverage = 10, result_format = c('bed','rds')){
   result_format <- checkFormat(result_format, supported = c('bed','rds'))
   result_dir <- file.path(config$results_path, "methyl_results")
@@ -484,9 +485,9 @@ readMethData <- function(config, context = c("CG","CHG","CHH"), context_label = 
     cat(paste0('Reading file: ', result_files[i], '\n'))
     methData[[i]] <- readMethResult(result_files[i], version = 2)
     methData[[i]] <- filterMethResult(methData[[i]], ref_sequence_name = config$ref_control_sequence_name, context, context_label, min_coverage)
-    methData[[i]] <- convertMethResult(methData[[i]])
+    methData[[i]] <- convertMethResult(methData[[i]], assembly='hg38', resolution='base')
   }
-  
+
   methData <- new("methylRawList", methData, treatment = c(rep(0, length(sample_id))))
   attr(methData, 'context') <- context_label
   attr(methData, 'mincov') <- min_coverage

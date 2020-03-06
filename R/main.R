@@ -17,7 +17,7 @@ source("./R/mainQC.R")
 #########################################
 CytoMethInfo <- function(){
   cat("#######################################\n")
-  cat("### CytoMeth ver 0.9.17 (23-01-2020) ###\n")
+  cat("### CytoMeth ver 0.9.18 (06-03-2020) ###\n")
   cat("#######################################\n")
   cat("### Created by Michal Draminski, Agata Dziedzic, Rafal Guzik, Bartosz Wojtas and Michal J. Dabrowski ###\n")
   cat("### Computational Biology Lab, Polish Academy of Science, Warsaw, Poland ###\n")
@@ -73,7 +73,7 @@ CytoMeth <- function(config, input_file = NULL){
 # CytoMethSingleSample
 #########################################
 #config <- conf; input_file <-"~/workspace/CytoMeth/input_test/small_FAKE03_R1.fastq";
-#
+#config$clean_tmp_files <- F
 CytoMethSingleSample <- function(config, input_file){
   
   #show vignette
@@ -84,6 +84,7 @@ CytoMethSingleSample <- function(config, input_file){
   
   config$myAppName <- "### CytoMeth ### "
   config_tools <- read.csv(file.path(config$tools_path, config$tools_config), stringsAsFactors = FALSE)
+  sample_basename <- basename_sample(input_file)
   full_start_time <- Sys.time()
   
   if(tolower(file_ext(input_file)) == "fastq"){
@@ -115,10 +116,17 @@ CytoMethSingleSample <- function(config, input_file){
     print(paste0("Error! Input file is not in required format. Files: 'fastq' or 'bam' are required!"))
     return(F)
   }
-  
-  sample_basename <- basename_sample(input_file)
+
+  methyl_result_file <- paste0(file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"], sample_basename),".methylation_results.bed")
+  if(!config$overwrite_results & file.exists(methyl_result_file)){
+    cat('#############################################\n')
+    cat(paste0("Sample '",sample_basename,"' is already processed. Skipping the file!\n"))
+    cat('#############################################\n')
+    return(T)
+  }
+
   cat('#############################################\n')
-  cat(paste0("Processing the sample - ", sample_basename, "\n"))
+  cat(paste0("Processing the sample - '", sample_basename, "'\n"))
   cat('#############################################\n')
   
   #create (if doesnt exist) full folders structure for temp and results files
@@ -228,10 +236,17 @@ CytoMethSingleSample <- function(config, input_file){
   full_stop_time <- Sys.time()
   processing_time <- format(full_stop_time - full_start_time, digits=3)
   
-  sampleQC <- getSampleQCSummary(sample_basename, config, save = T, result_format = 'bed')
+  #generate QCreport for the given sample
+  sampleQC <- getSampleQCSummary(sample_basename, config, result_format = 'bed')
+  sampleQC$processing_time <- processing_time
   print(paste0(sample_basename, " - QC report: "))
   print(qc2dataframe(sampleQC))
   
+  # Write QC report to yaml file
+  sample_report_file <- file.path(config$results_path, "QC_report", paste0(sample_basename,"_QC_summary.yml"))
+  print(paste0("Saving QC report file to: ", sample_report_file))
+  yaml::write_yaml(lapply(sampleQC, as.character), sample_report_file)
+
   cat('#############################################\n')
   cat(paste0("Processing the sample - '", sample_basename, "' is finished. [", processing_time ,"]\n"))
   cat('#############################################\n\n')

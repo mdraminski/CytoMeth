@@ -1,8 +1,8 @@
 ### General Params
 verbose: TRUE
-threads: 8
+threads: 12
 memory: 16G
-overwrite_results: TRUE
+overwrite_results: FALSE
 clean_tmp_files: TRUE
 plot_format: "pdf"
 

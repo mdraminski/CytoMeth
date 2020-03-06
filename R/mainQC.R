@@ -1,7 +1,7 @@
 ################################
 ###### get and save SAMPLE_QC_summary ####
 #config <- conf; save = F; result_format = 'bed'; sample_basename <- "DA01"; sample_basename <- "small_FAKE01"; 
-getSampleQCSummary <- function(sample_basename, config, save = T, result_format = c('bed','rds')){
+getSampleQCSummary <- function(sample_basename, config, result_format = c('bed','rds')){
   result_format <- checkFormat(result_format, supported = c('bed','rds'))
   config_tools <- read.csv(file.path(config$tools_path, config$tools_config), stringsAsFactors = FALSE)
   sampleQC <- list()
@@ -121,13 +121,6 @@ getSampleQCSummary <- function(sample_basename, config, save = T, result_format 
     sampleQC$Prc_of_Cs_in_panel_CpG_cov_max9 <- 100 * (sampleQC$Number_of_Cs_in_panel_CpG_cov_max9/sampleQC$Number_of_Cs_in_panel_CpG)
   }
   
-  if(save){
-    # Write QC report to yaml file
-    sample_report_file <- file.path(config$results_path, "QC_report", paste0(sample_basename,"_QC_summary.yml"))
-    print(paste0("Saving QC report file to: ", sample_report_file))
-    yaml::write_yaml(lapply(sampleQC,as.character), sample_report_file)
-  }
-  
   return(sampleQC)
 }
 
@@ -159,7 +152,7 @@ readAllQCSummary <- function(config, save = T){
   qc_summary <- lapply(input_files, function(x) as.data.frame(yaml::read_yaml(x), stringsAsFactors = F))
   qc_summary <- data.frame(rbindlist(qc_summary))
   
-  no_numeric_cols <- c("Sample_ID")
+  no_numeric_cols <- c("Sample_ID", "processing_time")
   for(curcol in names(qc_summary)){
     if(!curcol %in% no_numeric_cols){
       qc_summary[,curcol] <- as.numeric(qc_summary[,curcol])
