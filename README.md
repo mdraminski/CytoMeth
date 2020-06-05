@@ -11,9 +11,10 @@ CytoMeth is a tool that processes methylation data designed to deal with paired-
 CytoMeth tool compiles a set of open source software named in the Roche pipeline guidelines to perform SeqCap Epi data analysis. The pipe includes read quality assessment, read filtering, mapping to a reference genome, removal of PCR duplicates, assessment of coverage statistics, analyse methylation and variant calling and filtering as well as some additional functionalities added to improve the process and facilitate obtaining the processed results. Here, to obtain methylomes for brain tumor samples we used SeqCap Epi CpGiant Methylation panel and performed bisulphite conversion followed by Illumina NGS sequencing and CytoMeth tool analysis.
 
 ## Table of contents
-* [Environment Preparation]
-* [Installation of CytoMeth Components]
-* [The Docker]
+* [Installation](#installation)
+  * [Environment Preparation](#environment-preparation)
+  * [Installation of CytoMeth Components](#installation-of-cytometh-components)
+  * [The Docker](#the-docker)
 * [CytoMeth Usage](#usage)
 * [Authors](#authors)
 * [License](#license)
