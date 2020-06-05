@@ -11,15 +11,26 @@ CytoMeth is a tool that processes methylation data designed to deal with paired-
 CytoMeth tool compiles a set of open source software named in the Roche pipeline guidelines to perform SeqCap Epi data analysis. The pipe includes read quality assessment, read filtering, mapping to a reference genome, removal of PCR duplicates, assessment of coverage statistics, analyse methylation and variant calling and filtering as well as some additional functionalities added to improve the process and facilitate obtaining the processed results. Here, to obtain methylomes for brain tumor samples we used SeqCap Epi CpGiant Methylation panel and performed bisulphite conversion followed by Illumina NGS sequencing and CytoMeth tool analysis.
 
 ## Table of contents
-* [Installation](#installation)
-* [Usage](#usage)
+* [Environment Preparation]
+* [Installation of CytoMeth Components]
+* [The Docker]
+* [CytoMeth Usage](#usage)
 * [Authors](#authors)
 * [License](#license)
 * [Acknowledgments](#acknowledgments)
 
 # Installation
+CytoMeth is implemented as a set of R scripts that run various tools in a specific sequence with specific set of parameters. It can be installed (and used) in two ways:
 
-CytoMeth is implemented as a set of R scripts that run various tools in a specific sequence with specific set of parameters. To complete the installation process CytoMeth requires the following components installed on your OS:
+- as a set of scripts and third party required tools installed directly in your Linux OS
+- as a docker image that can be run under any OS
+
+If you prefer the docker installation please skip the section below and go to the section [The Docker]. If you prefer to install it directly on your Linux environment please go through all below steps.
+
+## Environment Preparation
+Notice that below steps refer to Linux OS. However more experienced user can also use this manual to install CytoMeth on OSX but it requires some slight adaptations that are not provided in the description.
+
+To complete the installation process CytoMeth requires the following components installed on your OS:
 
 - R and Rscript
 - Conda - an open source package management system
@@ -27,9 +38,7 @@ CytoMeth is implemented as a set of R scripts that run various tools in a specif
 - Java 8 (1.8) or above
 - wget tool
 
-If you are sure all of the above is working correctly (*R*,  *conda*, *Java*, *python 2.x*) on your system you can skip the next section and go to the section CytoMeth installation.
-
-## Preparation of the Environment
+If you are sure all of the above is working correctly (*R*,  *conda*, *Java*, *python 2.x*) on your system you can skip the next section and go to the section [Installation of CytoMeth Components].
 
 ### R and Rscript
 Check if there is R installed on your machine. Type in a terminal window:
@@ -54,12 +63,12 @@ conda info
 ```
 If conda *command not found* please install it. Download anaconda from the web:
 ```bash
-wget https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh
+wget https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
 ```
 Install it in the following directory: '*/opt/anaconda*' and remove the installation file.
 ```bash
-sudo bash Anaconda3-2019.10-Linux-x86_64.sh -b -p /opt/anaconda
-rm Anaconda3-2019.10-Linux-x86_64.sh 
+sudo bash Anaconda3-2020.02-Linux-x86_64.sh -b -p /opt/anaconda
+rm Anaconda3-2020.02-Linux-x86_64.sh 
 ```
 Create new users group 'anaconda' and give all required priviliges to that group.
 ```bash
@@ -104,7 +113,13 @@ sudo apt-get update
 sudo apt-get install openjdk-8-jre-headless
 ```
 
-## Installation of CytoMeth components
+## Installation of CytoMeth Components
+
+To get CytoMeth from the github repository you may download it as a zip file or clone the project:
+```bash
+git clone https://github.com/mdraminski/CytoMeth.git
+cd CytoMeth
+```
 
 ### Installation script
 To install or update all required *R* and conda packages, download required reference files and set up CytoMeth,
@@ -169,7 +184,7 @@ CytoMeth also requires in its main directory '*conda.info*' file that can be man
 ```bash
 conda info --json > conda.info
 ```
-This file is also created during installation process.
+This file is also automatically created during installation process.
 
 
 ### Reference Files
@@ -189,10 +204,18 @@ wget -c -O ./input/small_FAKE03_R2.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth
 ```
 
 ## The Docker
-CytoMeth project is also available as a docker. The CytoMeth docker is a virtual machine that contains all the environment (apps and libraries) ready to run CytoMeth. To download and run CytoMeth docker please install Docker app from https://www.docker.com/
+CytoMeth project is also available as a docker. The CytoMeth docker is a virtual machine that contains all the environment (apps and libraries) ready to run CytoMeth. To download and run CytoMeth docker please install Docker app from https://www.docker.com/. After successfull instalation of Docker app you may build your own CytoMeth docker from the sources or download ready to use CytoMeth docker from  Docker Hub [Downloading the docker from Docker Hub]. 
 
 ### Building your own docker locally
 To build your own docker use *build* command and after the successful creation the docker is ready to run. Pleaese notice building of the docker may take tens of minutes because the proper environment must be created from the scratch, however it must be done only once.
+
+To get CytoMeth from the github repository you may download it as a zip file or clone the project:
+```bash
+git clone https://github.com/mdraminski/CytoMeth.git
+cd CytoMeth
+```
+
+To build your own docker run the command in the CytoMeth directory:
 ```bash
 docker build -t cytometh .
 ```
@@ -222,9 +245,9 @@ Reference data is several Gigabytes big therefore it is not included in any pare
 ```bash
 ./install.data.sh
 ```
-After successful installation of the reference data CytoMeth docker is ready to use.
+After successful installation of the reference data CytoMeth docker is ready to use. All reference files are located in */referenceData/* directory by default.
 
-# Usage
+# CytoMeth Usage
 
 ## Configuration
 
@@ -323,7 +346,7 @@ Before you run the processing you need to:
 - Prepare panel file (in .bed format) with panel coordinates and control coordinates '*SeqCap\_EPI\_CpGiant\_hg38\_custom\_liftOver\_phage.bed*'.
 
 If you used different panel or performed whole genome analysis, please prepare the '.bed' file defining genomic regions covered by your design, to compute not biased statistics.
-The control is used to estimate bisulfite conversion efficiency. Remember to add the sequence of your control e.g. enterobacteria phage lambda genome to the reference genome file so that captured controls can be mapped to the lambda genome. Reassuming, the reference genome file must be extended with a control sequence.
+The control is used to estimate bisulfite conversion efficiency. Remember to add the sequence of your control e.g. enterobacteria phage lambda genome to the reference genome file so that captured controls can be mapped to the lambda genome. Reassuming, the reference genome file must be extended with a control sequence. Notice that all reference files are located in */referenceData/* directory.
 Important: Check if your panel file (bed format) control sequence coordinates has the same name (header ID) as in reference fasta file.
 
 ## Running the CytoMeth Processing
