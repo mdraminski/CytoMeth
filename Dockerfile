@@ -4,6 +4,7 @@ ENV PATH="/opt/anaconda/bin:${PATH}"
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 
+RUN sed -i -e 's|disco|eoan|g' /etc/apt/sources.list
 RUN apt-get update && apt-get install -y --install-recommends apt-utils software-properties-common dirmngr apt-transport-https build-essential 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
 RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu disco-cran35/'
@@ -31,9 +32,9 @@ RUN locale-gen en_US.UTF-8
 
 RUN su - -c "R CMD javareconf"
 
-RUN wget https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh
-RUN bash Anaconda3-2019.10-Linux-x86_64.sh -b -p /opt/anaconda
-RUN rm Anaconda3-2019.10-Linux-x86_64.sh 
+RUN wget https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
+RUN bash Anaconda3-2020.02-Linux-x86_64.sh -b -p /opt/anaconda
+RUN rm Anaconda3-2020.02-Linux-x86_64.sh 
 
 WORKDIR /CytoMeth
 COPY . /CytoMeth

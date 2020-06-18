@@ -222,10 +222,10 @@ docker build -t cytometh .
 ```
 
 ### Downloading the docker from Docker Hub
-The docker ready to go is also publicly available on Docker Hub and can be pulled to your system by the command below. The second command adds a new docker tag so the name of the local docker image is cytometh instead of inconvenient e.g. mdraminski/cytometh:1.
+The docker ready to go is also publicly available on Docker Hub and can be pulled to your system by the command below. The second command adds a new docker tag so the name of the local docker image is cytometh instead of inconvenient e.g. mdraminski/cytometh:2.
 ```bash
-docker pull mdraminski/cytometh:1
-docker tag mdraminski/cytometh:1 cytometh
+docker pull mdraminski/cytometh:2
+docker tag mdraminski/cytometh:2 cytometh
 ```
 
 ### Running the docker
