@@ -39,13 +39,13 @@ fixMachineConfig <- function(config, thread_max = 16, mem_max = 32){
   total_ram <- as.numeric(benchmarkme::get_ram())
   opt_memory <- min(round((total_ram * 0.75)), mem_max*mem_mult)
   if(is.na(defined_memory)){
-    warning(paste0("Memory detected: ",f2sig(total_ram), ". Memory definition in 'config.yml' is broken: ",config$memory,". Switching to: ", f2sig(opt_memory)))
+    warning(paste0("Memory detected: ",f2si(total_ram), ". Memory definition in 'config.yml' is broken: ", config$memory, ". Switching to: ", f2si(opt_memory)))
     config$memory <- opt_memory
   }else if(total_ram < si2f(config$memory)){
-    warning(paste0("Memory detected: ",f2sig(total_ram), " is lower than defined in 'config.yml' file: ",f2sig(config$memory),". Switching to: ", f2sig(opt_memory)))
+    warning(paste0("Memory detected: ",f2si(total_ram), " is lower than defined: ", f2si(defined_memory), " in 'config.yml' file. Switching to: ", f2si(opt_memory)))
     config$memory <- opt_memory
   }else if(si2f(config$memory) < (6*mem_mult)){
-    warning(paste0("Memory detected: ",f2sig(total_ram), ". Memory definition in 'config.yml' is too low: ",f2sig(config$memory),". It is highly recommended to use at least: 6G"))
+    warning(paste0("Memory detected: ",f2si(total_ram), ". Memory defined: ", f2si(defined_memory), " in 'config.yml' file is too low. It is highly recommended to use at least 6G for this configuration."))
     config$memory <- defined_memory
   }else{
     config$memory <- defined_memory
@@ -76,9 +76,9 @@ si2f <- function(x){
   return(x)
 }
 #########################################
-# f2sig
+# f2si
 #########################################
-f2sig <- function(x){
+f2si <- function(x){
   if (x < 1e+06)
     return (paste0(floor(x/1000),'k'))
   else if (x < 1e+09)

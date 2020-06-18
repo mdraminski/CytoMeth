@@ -238,6 +238,13 @@ Notice all data that you download or create (e.g. results) within the docker ses
 docker run -it -v ~/Desktop:/Desktop cytometh /bin/bash
 ```
 
+Please remember if you want to share the folder '*Desktop*' between your docker and local system you need to modify the following '*config.yml*' paths accordingly:
+```yaml
+input_path: "/Desktop/input/"
+results_path: "/Desktop/results/"
+ref_data_path: "/Desktop/referenceData/"
+```
+
 ### Quit from the docker
 To shut down the virtual machine type command 'exit'. It is similar as quiting from ssh session.
 
@@ -255,7 +262,7 @@ After successful installation of the reference data CytoMeth docker is ready to 
 ### File 'config.yml'
 The file '*config.yml*' contains CytoMeth input parameters and before use of CytoMeth please define your processing. The default settings look like below:
 
-```bash
+```yaml
 #General Params
 verbose: TRUE
 threads: 8
@@ -304,7 +311,7 @@ Input parameters:
 ### File 'tools.conf.yml'
 The file '*tools.conf.yml*' contains CytoMeth tools parameters and it is located in tools directory. The settings in the file configure paths and names of all tools needed by CytoMeth processing default values are highly recommended. The file by default is defined as below:
 
-```bash
+```yaml
 ### TOOLS - path and tools cfg file
 tools_path: "./tools/"
 tools_config: "tools.conf.csv"
@@ -340,15 +347,11 @@ Before you run the processing you need to:
 - Copy your nucleotide sequences FASTA R1/R2 files (both in *.fastq* format) named: 'SAMPLENAME\_R1.fastq' and 'SAMPLENAME\_R2.fastq' (where 'SAMPLENAME' is a unique name of your sequenced sample) to the '*./input/*' directory.
 - If your files are compressed (*.gz* format) please decompress before use:
   ```bash
-  gunzip - c SAMPLENAME_R1.fastq.gz > SAMPLENAME_R1.fastq
-  gunzip - c SAMPLENAME_R2.fastq.gz > SAMPLENAME_R2.fastq
+  gunzip -c SAMPLENAME_R1.fastq.gz > SAMPLENAME_R1.fastq
+  gunzip -c SAMPLENAME_R2.fastq.gz > SAMPLENAME_R2.fastq
   ```
-- Prepare reference FASTA (in .fa or .fasta format) file with additional control sequence. CytoMeth comes with 'hg38_phage.fa' reference file with an additional sequence used as control (phage DNA sequence) and the file 'hg38.fa' without that additional seqence. Any new reference '.fa' file requires corresponding '.fai' and '.dict' files that should be generated.
-- Prepare panel file (in .bed format) with panel coordinates and control coordinates '*SeqCap\_EPI\_CpGiant\_hg38\_custom\_liftOver\_phage.bed*'.
-
-If you used different panel or performed whole genome analysis, please prepare the '.bed' file defining genomic regions covered by your design, to compute not biased statistics.
-The control is used to estimate bisulfite conversion efficiency. Remember to add the sequence of your control e.g. enterobacteria phage lambda genome to the reference genome file so that captured controls can be mapped to the lambda genome. Reassuming, the reference genome file must be extended with a control sequence. Notice that all reference files are located in */referenceData/* directory.
-Important: Check if your panel file (bed format) control sequence coordinates has the same name (header ID) as in reference fasta file.
+- Prepare reference FASTA (in .fa or .fasta format) file with additional control sequence. CytoMeth comes with 'hg38_phage.fa' reference file with an additional sequence used as control (phage DNA sequence) and the file 'hg38.fa' without that additional seqence. Any new reference '.fa' file requires corresponding '.fai' and '.dict' files that should be generated. The control is used to estimate bisulfite conversion efficiency. Remember to add the sequence of your control e.g. enterobacteria phage lambda genome to the reference genome file so that captured controls can be mapped to the lambda genome. Reassuming, the reference genome file must be extended with a control sequence. Notice that all reference files are located in */referenceData/* directory.
+- Prepare panel file (in .bed format) with panel coordinates and control coordinates '*SeqCap\_EPI\_CpGiant\_hg38\_custom\_liftOver\_phage.bed*'. If you used different panel or performed whole genome analysis, please prepare the '.bed' file defining genomic regions covered by your design, to compute not biased statistics. **Important**: Check if your panel file (bed format) control sequence coordinates has the same name (header ID) as in reference fasta file.
 
 ## Running the CytoMeth Processing
 

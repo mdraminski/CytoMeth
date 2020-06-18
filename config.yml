@@ -1,7 +1,7 @@
 ### General Params
 verbose: TRUE
 threads: 12
-memory: 16G
+memory: 12G
 overwrite_results: FALSE
 clean_tmp_files: TRUE
 plot_format: "pdf"
@@ -24,3 +24,4 @@ ref_control_sequence_name: "NC_001416"
 trimmomatic_MINLEN: 50
 sqtk_run: FALSE
 sqtk_subset: 10000000
+methratio_batch_processing: TRUE
