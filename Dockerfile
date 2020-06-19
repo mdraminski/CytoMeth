@@ -7,7 +7,7 @@ ENV LANG=en_US.UTF-8
 RUN sed -i -e 's|disco|eoan|g' /etc/apt/sources.list
 RUN apt-get update && apt-get install -y --install-recommends apt-utils software-properties-common dirmngr apt-transport-https build-essential 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
-RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu disco-cran35/'
+RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu eoan-cran35/'
 
 #RUN apt-get update && apt-get install -y --install-recommends \
 RUN apt-get update && apt-get install -y \
