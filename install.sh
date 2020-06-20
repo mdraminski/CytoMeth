@@ -33,6 +33,7 @@ while true; do
                 conda install -y -c bioconda fastqc;
                 conda install -y -c bioconda pysam;
                 conda install -y -c bioconda -c r samtools --override-channels;
+                ln -sf /opt/anaconda/lib/libcrypto.so.1.1 /opt/anaconda/lib/libcrypto.so.1.0.0;
                 break;;
         [Nn]* ) echo "Skipping installation"; break;;
         * ) echo "Please answer yes or no";;

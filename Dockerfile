@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --install-recommends apt-utils software
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9
 RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu eoan-cran35/'
 
-#RUN apt-get update && apt-get install -y --install-recommends \
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --install-recommends \
+#RUN apt-get update && apt-get install -y \
 locales \
 default-jdk \
 nano \
@@ -23,7 +23,8 @@ python-pip \
 r-base \
 r-base-dev \
 libcurl4-openssl-dev \
-libssl-dev
+libssl-dev \
+libssl1.1
 
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
