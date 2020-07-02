@@ -41,6 +41,9 @@ To complete the installation process CytoMeth requires the following components 
 
 If you are sure all of the above is working correctly (*R*,  *conda*, *Java*, *python 2.x*) on your system you can skip the next section and go to the section [Installation of CytoMeth Components].
 
+## Hardware requirements
+Hardware requirements highly depend on type and size of the input data. However for human data size of the memory should be at least 4GB reserved for the CytoMeth. Tools that CytoMeth runs also take the advantage of multicore CPU architecture. 
+
 ### R and Rscript
 Check if there is R installed on your machine. Type in a terminal window:
 
@@ -249,11 +252,11 @@ ref_data_path: "/Desktop/referenceData/"
 To shut down the virtual machine type command 'exit'. It is similar as quiting from ssh session.
 
 ### Reference data
-Reference data is several Gigabytes big therefore it is not included in any parent docker. However after successful running of the docker you can download the data by running '*install.data.sh*' script in the CytoMeth main directory. 
+Reference data is several Gigabytes big therefore it is not included in the parent docker. However after successful running of the docker on your machine you can download the data by running '*install.data.sh*' script in the CytoMeth main directory. 
 ```bash
 ./install.data.sh
 ```
-After successful installation of the reference data CytoMeth docker is ready to use. All reference files are located in */referenceData/* directory by default.
+After successful installation of the reference data CytoMeth docker is ready to use. All reference files are located in */referenceData/* directory by default. However they disappear after turning off the docker. Therefore it is recommended to use shared folder (see the section '*Running the docker*'). In this case it is recommended to copy and run the script '*install.data.sh*' directly in the shared folder. Please remember to set up all the paths to the new shared folder in your '*config.yml*' file.
 
 # CytoMeth Usage
 
@@ -279,14 +282,20 @@ results_path: "./results/"
 ### Reference Data - Path
 ref_data_path: "./referenceData/"
 ### Reference Data - Files
-reference_sequence_file: "hg38_phage.fa"
-intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
-ref_sequence_name: "NC_001416"
+ref_data_sequence_file: "hg38_phage.fa"
+ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed"
+ref_control_sequence_name: "NC_001416"
+
+### Reference Data - Remaining Files
+ref_data_trimmomatic_adapter: "Trimmomatic/adapters/TruSeq3-PE-2.fa"
+ref_data_CpgIslandAnnotation: "cpgIslandExt.hg38.bed"
+ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
 
 # Specific Tools params
 trimmomatic_MINLEN: 50
 sqtk_run: FALSE
 sqtk_subset: 10000000
+methratio_batch_processing: TRUE
 ```
 
 Input parameters:
@@ -307,6 +316,7 @@ Input parameters:
 - trimmomatic_MINLEN - MINLEN parameter of the trimmomatic tool.
 - sqtk_run - if TRUE initial sqtk sampling is processed.
 - sqtk_subset - size of the subset to select by the sqtk tool.
+- methratio_batch_processing - determines if methratio process should be run gene by gene (better for big input samples) or all genes at once (faster for small input data samples). It is TRUE by default.
 
 ### File 'tools.conf.yml'
 The file '*tools.conf.yml*' contains CytoMeth tools parameters and it is located in tools directory. The settings in the file configure paths and names of all tools needed by CytoMeth processing default values are highly recommended. The file by default is defined as below:
@@ -333,11 +343,6 @@ bisSNP:
 
 ### python2 path
 python2: "python2"
-
-### Reference Data - Remaining Files
-ref_data_trimmomatic_adapter: "Trimmomatic/adapters/TruSeq3-PE-2.fa"
-ref_data_CpgIslandAnnotation: "cpgIslandExt.hg38.bed"
-ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
 ```
 
 ## Input files

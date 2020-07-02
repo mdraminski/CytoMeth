@@ -388,25 +388,35 @@ run_MappingMetrics <- function(config, config_tools){
   }
   if(!checkIfFileExists(paste0(insert_size_result_file,"_insert_size_metrics.txt"))) return(NULL)
   
+  
   ######  On-target reads (BEDTools - intersect)
   on_target_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="on_target_reads","temp_results_dirs"], sample_basename)
   if(config$overwrite_results | !(file.exists(paste0(on_target_result_file,"_on_target_reads")))) {
-    src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
-                          " intersect -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"), 
-                          " -b ", file.path(config$ref_data_path, config$ref_data_intervals_file), 
-                          " > ",paste0(on_target_result_file, "_on_target_reads"))
-    runSystemCommand(config$myAppName, 'BEDTools', 'Intersect on_target_reads', src_command, config$verbose)
+    ## If the panel file is defined use the standard path - intersect
+    if(str_trim(config$ref_data_intervals_file) != ''){
+      src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
+                            " intersect -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"), 
+                            " -b ", file.path(config$ref_data_path, config$ref_data_intervals_file), 
+                            " > ",paste0(on_target_result_file, "_on_target_reads"))
+      runSystemCommand(config$myAppName, 'BEDTools', 'Intersect on_target_reads', src_command, config$verbose)
+    }else{
+      ## If the panel file is not defined use convert bam2bed - (bedtools bamtobed -i reads.bam)
+      src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
+                            " bamtobed -i ",  paste0(rmdups_result_file, ".rmdups.bam"),
+                            " > ",paste0(on_target_result_file, "_on_target_reads"))
+      runSystemCommand(config$myAppName, 'BEDTools', 'bamtobed on_target_reads', src_command, config$verbose)
+    }
   }else{
     skipProcess(config$myAppName, 'BEDTools', 'Intersect on_target_reads',
                 file.path(config$results_path, config_tools[config_tools$proces=="on_target_reads","temp_results_dirs"],"/"))
   }
   if(!checkIfFileExists(paste0(on_target_result_file,"_on_target_reads"))) return(NULL)
-  
-  #save result SAMPLE_on_target_reads.txt file
+
+  #update and save result SAMPLE_on_target_reads.txt file
   number_of_on_target_reads <- getLinesNumber(paste0(on_target_result_file,"_on_target_reads"))
   on_target_params <- list(number_of_on_target_reads = as.character(number_of_on_target_reads))
   yaml::write_yaml(on_target_params, paste0(on_target_result_file,"_on_target_reads.txt"))
-  
+
   config$tmp_files <- c(config$tmp_files, paste0(on_target_result_file,"_on_target_reads"))
   return(config)
 }
@@ -423,12 +433,16 @@ run_DepthOfCoverage <- function(config, config_tools){
   gatk_depth_logfile <- file.path(file.path(config$results_path,"logs"), paste0(sample_basename, "_", config_tools[config_tools$process=="depth_of_coverage","logfile"]))
   if(config$overwrite_results | !(file.exists(paste0(depth_of_cov_result_file,"_gatk_target_coverage")) &
                                   file.exists(paste0(depth_of_cov_result_file,"_gatk_target_coverage.sample_summary")) & file.exists(gatk_depth_logfile))){
+    panel_command <- ""
+    if(str_trim(config$ref_data_intervals_file != "")){
+      panel_command <- paste0(" -L ", file.path(config$ref_data_path, config$ref_data_intervals_file))
+    }
     src_command <- paste0("java -Xms", f2si(config$memory)," -Xmx", f2si(config$memory),
                           " -jar ", file.path(config$tools_path, config$gatk),
                           " -T DepthOfCoverage -R ", file.path(config$ref_data_path, config$ref_data_sequence_file), 
                           " -I ", paste0(clipping_result_file,".clipped.bam"),
                           " -o ", paste0(depth_of_cov_result_file,"_gatk_target_coverage"),
-                          " -L ", file.path(config$ref_data_path, config$ref_data_intervals_file),
+                          panel_command,
                           " -ct 1 -ct 10 -ct 20", 
                           " > ", gatk_depth_logfile)
     runSystemCommand(config$myAppName, 'GATK', 'depth_of_coverage', src_command, config$verbose)
@@ -466,7 +480,7 @@ run_CalcMethylation <- function(config, config_tools){
       runSystemCommand(config$myAppName, 'bedtools', 'bamToBed', src_command, config$verbose)
       print(paste0("Reading sample chromosomes..."))
       sample_chr <- getSampleChr(clipping_result_file_bed)
-      #print(sample_chr)
+      print(head(sample_chr, 12))
       chr_output_files <- list()
       logAppend <- ">"
       for(i in 1:length(sample_chr)){

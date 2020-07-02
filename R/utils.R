@@ -91,13 +91,19 @@ f2si <- function(x){
     return (x)
 }
 #########################################
-# readCondaPath
+# readCondaPath()
 #########################################
 readCondaPath <- function(file = "conda.info"){
   json_data <- NA
   if(file.exists(file)){
-    json_data <- rjson::fromJSON(paste(readLines("conda.info"), collapse=""))
-    json_data <- file.path(json_data$conda_prefix, "bin")
+    json_data <- tryCatch({
+      json_data <- rjson::fromJSON(paste(readLines("conda.info"), collapse=""))
+      json_data <- file.path(json_data$conda_prefix, "bin")
+    }, warning = function(w) {
+      warning(w)
+    }, error = function(e) {
+      stop("File 'conda.info' is broken! Please make sure anaconda is installed on your system and run: 'conda info --json > conda.info' in the CytoMeth directory.")
+    })
   }
   else{
     stop("File 'conda.info' does not exist! Please make sure anaconda is installed on your system and run: 'conda info --json > conda.info' in the CytoMeth directory.")
@@ -201,6 +207,7 @@ checkRequiredFiles <- function(config){
     file.path(config$ref_data_path, paste0(tools::file_path_sans_ext(config$ref_data_sequence_file),".dict")),
     file.path(config$tools_path, config$trimmomatic_adapter))
   
+  config$ref_data_intervals_file <- str_trim(config$ref_data_intervals_file)
   if(str_trim(config$ref_data_intervals_file) != ''){
     cytoMethRefFiles <- c(cytoMethRefFiles, file.path(config$ref_data_path, config$ref_data_intervals_file))
   }
@@ -208,7 +215,7 @@ checkRequiredFiles <- function(config){
   for(i in 1:length(cytoMethRefFiles)){
     if(!file.exists(cytoMethRefFiles[i])){
       stop(paste0("Required Reference File: ",  cytoMethRefFiles[i], 
-                  " is not available! Please download Reference Files! (See 'Reference Files' section in CytoMeth manual."))
+                  " is not available! Please download Reference Files! (See 'Reference Files' section in CytoMeth manual)."))
     }
   }
   cat("All required reference files are available. OK.\n")
@@ -524,8 +531,8 @@ getCovSummary <- function(config, min_coverage = c(7,8,9,10,11,12,13), result_fo
 }
 
 #############################################################
-######## Read unique chromosomes from sample bed  file  #####
-getSampleChr <- function(filepath, buff = 100000) {
+######## Read unique chromosomes from sample bed file  #####
+getSampleChr <- function(filepath, buff = 100000, chr_filter = F) {
   con <- file(filepath, "r")
   chrlines <- c()
   b <- 0
@@ -535,7 +542,9 @@ getSampleChr <- function(filepath, buff = 100000) {
       break
     }
     chrline <- unique(unlist(lapply(str_split(lines, pattern="\t", n=2), function(x) return(x[1]))))
-    chrline <- chrline[startsWith(chrline,"chr")]
+    if(chr_filter){
+      chrline <- chrline[startsWith(chrline,"chr")]
+    }
     if(length(chrline)>0 | is.null(chrlines)){
       chrlines <- unique(c(chrlines, chrline))
     }

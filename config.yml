@@ -20,6 +20,11 @@ ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
 #ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed"
 ref_control_sequence_name: "NC_001416"
 
+### Reference Data - Remaining Files
+ref_data_trimmomatic_adapter: "Trimmomatic/adapters/TruSeq3-PE-2.fa"
+ref_data_CpgIslandAnnotation: "cpgIslandExt.hg38.bed"
+ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
+
 ### Specific Tools params
 trimmomatic_MINLEN: 50
 sqtk_run: FALSE
