@@ -393,8 +393,14 @@ plotMethLevels <- function(meth_data, config, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0
 #config <- conf
 plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(0.2,0.8), config, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
   
-  cpg.gene <- readTranscriptFeatures(file.path(config$ref_data_path, config$ref_data_CpGGenomAnnotation))
-  cpg.island <- readFeatureFlank(file.path(config$ref_data_path, config$ref_data_CpgIslandAnnotation), feature.flank.name=c("CpGi","shores"))
+  cpg.gene <- NULL
+  cpg.island <- NULL
+  if(str_trim(config$ref_data_CpGGenomAnnotation) != ""){
+    cpg.gene <- readTranscriptFeatures(file.path(config$ref_data_path, config$ref_data_CpGGenomAnnotation))
+  }
+  if(str_trim(config$ref_data_CpgIslandAnnotation) != ""){
+    cpg.island <- readFeatureFlank(file.path(config$ref_data_path, config$ref_data_CpgIslandAnnotation), feature.flank.name=c("CpGi","shores"))
+  }
   percentage_meth <- lapply(meth_data, function(x){ x$numCs/x$coverage } )
   
   meth_data_hypo <- list()
@@ -405,11 +411,16 @@ plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(0.2,0.8), config, pa
     meth_data_hyper[[meth_data[[i]]@sample.id]] <- meth_data[[i]][percentage_meth[[i]] >= hypo_hyper_def[2]]
   }
   
-  plotList <- list(
-    plotCpGGenomAnnotation(meth_data_hyper, cpg.gene, config, pal, subtitle = "Hypermethylated", share, save, fontsize),
-    plotCpGGenomAnnotation(meth_data_hypo, cpg.gene, config, pal, subtitle = "Hypomethylated", share, save, fontsize),
-    plotCpGIslandsAnnotation(meth_data_hyper, cpg.island, config, pal, subtitle = "Hypermethylated", share, save, fontsize),
-    plotCpGIslandsAnnotation(meth_data_hypo, cpg.island, config, pal, subtitle = "Hypomethylated", share, save, fontsize))
+  plotList <- list()
+  if(!is.null(cpg.gene)){
+    plotList[[length(plotList)+1]] <- plotCpGGenomAnnotation(meth_data_hyper, cpg.gene, config, pal, subtitle = "Hypermethylated", share, save, fontsize)
+    plotList[[length(plotList)+1]] <- plotCpGGenomAnnotation(meth_data_hypo, cpg.gene, config, pal, subtitle = "Hypomethylated", share, save, fontsize)
+  }
+  if(!is.null(cpg.island)){
+    plotList[[length(plotList)+1]] <- plotCpGIslandsAnnotation(meth_data_hyper, cpg.island, config, pal, subtitle = "Hypermethylated", share, save, fontsize)
+    plotList[[length(plotList)+1]] <- plotCpGIslandsAnnotation(meth_data_hypo, cpg.island, config, pal, subtitle = "Hypomethylated", share, save, fontsize)
+  }
+  
   return(plotList)
 }
 

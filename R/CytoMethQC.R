@@ -29,4 +29,3 @@ gg <- plotMethStatsSummary(methData, conf, log = F, save = save)
 gg <- plotMethLevels(methData, conf, share = T, save = save)
 gg <- plotCpGAnnotation(methData, hypo_hyper_def = c(0.2,0.8), conf, share = T, save = save)
 gg <- plotCntCommonCpG(methData, conf, save = save)
-
