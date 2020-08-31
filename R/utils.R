@@ -163,6 +163,12 @@ createResultDirs <- function(config){
   }else{
     #print(paste0("Warning! Directory: ",file.path(results_path, "QC_report"), " already exists!"))
   }
+  #create tmp report directory
+  if(!dir.exists(file.path(results_path, "tmp"))){
+    dir.create(file.path(results_path, "tmp"), showWarnings = T)
+  }else{
+    #print(paste0("Warning! Directory: ",file.path(results_path, "tmp"), " already exists!"))
+  }
   return(T)
 }
 
@@ -319,7 +325,7 @@ getRVer <- function(){
 }
 
 ###############################
-#file.ext
+#fileExt
 ###############################
 fileExt <- function(x){
   ext <- unlist(strsplit(basename(x), '[.]'))
@@ -328,6 +334,17 @@ fileExt <- function(x){
   else
     ext <- ''
   return (ext)
+}
+
+######################################
+######## file.remove.if.exists  ####
+fileRemoveIfExists <- function(x){
+  if(file.exists(x)){
+    file.remove(x)
+    return(TRUE)
+  }else{
+    return(FALSE)
+  }
 }
 
 #########################################

@@ -29,4 +29,5 @@ ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
 trimmomatic_MINLEN: 50
 sqtk_run: FALSE
 sqtk_subset: 10000000
-methratio_batch_processing: TRUE
+### methratio_processing: ["allCHR","batchCHR","batchCHR_HDD"]
+methratio_processing: "batchCHR_HDD"

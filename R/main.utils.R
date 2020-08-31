@@ -461,85 +461,128 @@ run_DepthOfCoverage <- function(config, config_tools){
 }
 
 ##################################
-######  run_CalcMethylation  #####
+######     run_Methratio     #####
 ##################################
-run_CalcMethylation <- function(config, config_tools){
+run_Methratio <- function(config, config_tools){
+  start_time_meth <- Sys.time()
+  chr_output_files <- NULL
   sample_basename <- basename_sample(config$file_bam)
   clipping_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="clip_overlap","temp_results_dirs"], sample_basename)
+  clipping_result_file_bam <- paste0(clipping_result_file,".clipped.bam")
   clipping_result_file_bed <- paste0(clipping_result_file,".clipped.bed")
+  clipping_result_file_sam <- stringr::str_replace(paste0(clipping_result_file,".clipped.sam"),"clipped","tmp")
   
   ######  python - methratio (BSMAP)
-  methyl_result_file <- paste0(file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"], sample_basename),".methylation_results.bed")
+  methyl_result_file <- paste0(file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"], sample_basename),".methylation_results.txt")
   methratio_logfile <- file.path(file.path(config$results_path,"logs"),paste0(sample_basename,"_",config_tools[config_tools$process=="methratio","logfile"]))
   
   if(config$overwrite_results | !(file.exists(methyl_result_file) & file.exists(methratio_logfile))) {
-    if(config$methratio_batch_processing == T){
-      ######  Methratio CHR BATCH PROCESSING
-      print(paste0("Conversion of input clipped.bam to clipped.bed [bamToBed]..."))
-      src_command <- paste0(file.path(config$anaconda_bin_path,"bamToBed")," -i ", clipping_result_file,".clipped.bam"," > ", clipping_result_file_bed)
-      runSystemCommand(config$myAppName, 'bedtools', 'bamToBed', src_command, config$verbose)
-      print(paste0("Reading sample chromosomes..."))
-      sample_chr <- getSampleChr(clipping_result_file_bed)
-      print(head(sample_chr, 12))
-      chr_output_files <- list()
-      logAppend <- ">"
-      for(i in 1:length(sample_chr)){
-        print(paste0("##### Running methratio for chr: '",sample_chr[i],"' [",i,"/",length(sample_chr),"] #####"))
-        current_output <- str_replace(methyl_result_file, ".methylation_results.bed", paste0(".methylation_results.",sample_chr[i],".txt"))
-        chr_output_files[[i]] <- current_output
-        src_command <- paste0(config$python2, " ", file.path(config$tools_path, config$methratio), 
-                              " -c ", sample_chr[i]," -d ", file.path(config$ref_data_path, config$ref_data_sequence_file), 
-                              #" -s ", config$anaconda_bin_path,
-                              " -m 1 -z -i skip", 
-                              " -o ", current_output, " ", paste0(clipping_result_file,".clipped.bam"),
-                              " 2", logAppend," ", methratio_logfile)
-        runSystemCommand(config$myAppName, 'BSMAP', 'methratio', src_command, config$verbose)
-        logAppend <- ">>"
-      }
-      chr_output_files <- unlist(chr_output_files)
-    }else{
-      skipProcess(config$myAppName, 'BSMAP', 'methratio',
-                  file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"],"/"))
-    }
-    if(!checkIfFileExists(methratio_logfile)) return(NULL)
-    if(!all(sapply(c(chr_output_files), checkIfFileExists))){
-      cat(paste0(readLines(methratio_logfile),"\n"))
-      return(NULL)
-    }
-    methyl_result_data <- list()
-    ######  Make bed file out of methyl results
-    print(paste0("File conversion txt -> bed..."))
-    for(i in 1:length(chr_output_files)){
-      print(paste0("Reading the file: ", chr_output_files[i]))
-      methyl_result_data[[i]] <- data.table::fread(chr_output_files[i], header = T, sep = '\t')
-    }
-    methyl_result_data <- data.table::rbindlist(methyl_result_data)
-  }else{
-    ######  Methratio ALL CHR AT ONCE
-    if(config$overwrite_results | !(file.exists(paste0(methyl_result_file,".methylation_results.txt")) & file.exists(methratio_logfile))) {
+    ######  Methratio ALL CHR PROCESSING
+    if(tolower(config$methratio_processing) == tolower("allCHR")){
       src_command <- paste0(config$python2, " ", file.path(config$tools_path, config$methratio), 
                             " -d ", file.path(config$ref_data_path, config$ref_data_sequence_file), 
                             #" -s ", config$anaconda_bin_path,
                             " -m 1 -z -i skip", 
-                            " -o ", paste0(methyl_result_file,".methylation_results.txt")," ", paste0(clipping_result_file,".clipped.bam"),
+                            " -o ", methyl_result_file," ", clipping_result_file_bam,
                             " 2> ", methratio_logfile)
       runSystemCommand(myAppName, 'BSMAP', 'methratio', src_command, config$verbose)
-    }else{
-      skipProcess(myAppName, 'BSMAP', 'methratio',
-                  file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"],"/"))
+    }else if(startsWith(tolower(config$methratio_processing),tolower("batchCHR"))){
+      ######  Methratio CHR BATCH PROCESSING - SPLIT INPUT FILE (HDD)
+      if(endsWith(tolower(config$methratio_processing),tolower("HDD"))){
+        batchHDD <- TRUE
+        print(paste0("Conversion of input clipped.bam to clipped.sam [bamToSam]..."))
+        src_command <- paste0(file.path(config$anaconda_bin_path,"samtools")," view ", clipping_result_file_bam," > ",clipping_result_file_sam)
+        runSystemCommand(config$myAppName, 'samtools', 'bamView', src_command, config$verbose)
+        print(paste0("Splitting clipped sam file..."))
+        src_command <- paste0("cd ", dirname(clipping_result_file_sam), "; awk '{print>$3}' ", basename(clipping_result_file_sam), ";")
+        runSystemCommand(config$myAppName, 'awk', 'splitclippedbed', src_command, config$verbose)
+        file.remove(clipping_result_file_sam)
+        inputFiles <- list.files(dirname(clipping_result_file_sam),full.names = T)
+        inputFiles <- sapply(inputFiles, function(x) {file.rename(x,paste0(x,".bsam"))})
+        inputFiles <- list.files(dirname(clipping_result_file_sam),full.names = T)
+        sample_chr <- stringr::str_replace(basename(inputFiles),".bsam","")
+      }else{
+      ######  Methratio CHR BATCH PROCESSING - NO SPLITTING
+        batchHDD <- FALSE
+        print(paste0("Conversion of input clipped.bam to clipped.bed [bamToBed]..."))
+        src_command <- paste0(file.path(config$anaconda_bin_path,"bamToBed")," -i ", clipping_result_file_bam," > ", clipping_result_file_bed)
+        runSystemCommand(config$myAppName, 'bedtools', 'bamToBed', src_command, config$verbose)
+        print(paste0("Reading sample chromosomes..."))
+        sample_chr <- getSampleChr(clipping_result_file_bed)
+        file.remove(clipping_result_file_bed)
+        print(head(sample_chr, 12))
+        inputFiles <- rep(clipping_result_file_bam, length(sample_chr))
+      }
+      #common processing for chr batch processing
+      chr_output_files <- list()
+      logAppend <- ">"
+      for(i in 1:length(sample_chr)){
+        print(paste0("#####################################################"))
+        print(paste0("##### Running methratio for chr: '",sample_chr[i],"' [",i,"/",length(sample_chr),"] #####"))
+        current_chr <- sample_chr[i]
+        current_input <- inputFiles[i]
+        current_output <- stringr::str_replace(methyl_result_file, ".methylation_results.txt", paste0(".methylation_results.",sample_chr[i],".txt"))
+        chr_output_files[[i]] <- current_output
+        src_command <- paste0(config$python2, " ", file.path(config$tools_path, config$methratio), 
+                              " -c ", current_chr," -d ", file.path(config$ref_data_path, config$ref_data_sequence_file), 
+                              #" -s ", config$anaconda_bin_path,
+                              " -m 1 -z -i skip", 
+                              " -o ", current_output, " ", current_input,
+                              " 2", logAppend, methratio_logfile)
+                              #" 1", logAppend, methratio_logfile, " 2>&1")
+        runSystemCommand(config$myAppName, 'BSMAP', 'methratio', src_command, config$verbose)
+        logAppend <- ">>"
+        if(batchHDD & file.exists(current_output))
+          file.remove(current_input)
+      }
+      chr_output_files <- unlist(chr_output_files)
+      if(!all(sapply(c(chr_output_files), checkIfFileExists))){
+        cat(paste0(readLines(methratio_logfile),"\n"))
+        return(NULL)
+      }
+      methyl_result_data <- list()
+      ######  Make one txt file out of separated chr methyl results
+      print(paste0("Methylation files binding ..."))
+      for(i in 1:length(chr_output_files)){
+        print(paste0("Reading the file: ", chr_output_files[i]))
+        methyl_result_data[[i]] <- data.table::fread(chr_output_files[i], header = T, sep = '\t')
+      }
+      methyl_result_data <- data.table::rbindlist(methyl_result_data)
+      data.table::fwrite(methyl_result_data, methyl_result_file, sep = '\t')
     }
-    
-    if(!checkIfFileExists(methratio_logfile)) return(NULL)
-    if(!checkIfFileExists(paste0(methyl_result_file,".methylation_results.txt"))) {
-      cat(paste0(readLines(methratio_logfile),"\n"))
-      return(NULL)
-    }
-    ######  Make bed file from methyl results
-    print(paste0("File conversion txt -> bed..."))
-    print(paste0("Reading the file: ", methyl_result_file,".methylation_results.txt"))
-    methyl_result_data <- data.table::fread(paste0(methyl_result_file,".methylation_results.txt"), header = T, sep = '\t')
-  }  
+  }else{
+    skipProcess(config$myAppName, 'BSMAP', 'methratio',
+                file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"],"/"))
+  }
+  
+  if(!checkIfFileExists(methratio_logfile)) return(NULL)
+  if(!checkIfFileExists(methyl_result_file)) {
+    cat(paste0(readLines(methratio_logfile),"\n"))
+    return(NULL)
+  }
+  stop_time_meth <- Sys.time()
+  cat(paste0(config$myAppName, ": All methratio Calculations are finished. [", format(stop_time_meth - start_time_meth, digits=3) ,"]\n"))
+  
+  config$tmp_files <- c(config$tmp_files, clipping_result_file_bed, clipping_result_file_sam, chr_output_files)
+  return(config)
+}
 
+##################################
+######  run_CalcMethylation  #####
+##################################
+run_CalcMethylation <- function(config, config_tools){
+
+  sample_basename <- basename_sample(config$file_bam)
+  ######  python - methratio (BSMAP)
+  methyl_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"], sample_basename)
+  methyl_result_file_txt <- paste0(methyl_result_file,".methylation_results.txt")
+  methyl_result_file <- paste0(methyl_result_file,".methylation_results.bed")
+  
+  ######  Make bed file from methyl results
+  print(paste0("File conversion txt -> bed..."))
+  print(paste0("Reading the file: ", methyl_result_file_txt))
+  methyl_result_data <- data.table::fread(methyl_result_file_txt, header = T, sep = '\t')
+  
   methyl_result_data$end <- methyl_result_data$pos
   methyl_result_data <- methyl_result_data[,c("chr","pos","end","context","ratio","strand","eff_CT_count","C_count", "CT_count")]
   names(methyl_result_data) <- getMethylDataHeader(version = 2, size = 9)
@@ -595,6 +638,6 @@ run_CalcMethylation <- function(config, config_tools){
   #save rds file
   saveRDS(methyl_result_data, str_replace(methyl_result_file, "methylation_results.bed","methylation_results.rds"))
   
-  config$tmp_files <- c(config$tmp_files, clipping_result_file_bed, chr_output_files, methyl_result_prime_file)
+  config$tmp_files <- c(config$tmp_files, methyl_result_file_txt, methyl_result_prime_file)
   return(config)
 }

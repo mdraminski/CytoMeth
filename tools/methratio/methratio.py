@@ -41,6 +41,8 @@ def disp(txt, nt=0):
     if not options.quiet: print >> sys.stderr, '[methratio] @%s \t%s' %(time.asctime(), txt)
 
 if len(options.outfile) == 0: disp("Missing output file name, write to STDOUT.")
+
+#Function def get_alignment(line) BEGIN
 def get_alignment(line):
     col = line.split('\t')
     if sam_format:
@@ -51,6 +53,15 @@ def get_alignment(line):
         if options.pair and 'P' not in flag: return []
         cr, pos, cigar, seq, strand, insert = col[2], int(col[3])-1, col[5], col[9], '', int(col[8])
         if cr not in options.chroms: return []
+        
+        print(line)
+        print("cr="+str(cr))
+        print("pos="+str(pos))
+        print("cigar="+str(cigar))
+        print("seq="+str(seq))
+        print("strand="+str(strand))
+        print("insert="+str(insert))
+        
         strand_index = line.find('ZS:Z:')
         assert strand_index >= 0, 'missing strand information "ZS:Z:xx"'
         strand = line[strand_index+5:strand_index+7]
@@ -89,14 +100,15 @@ def get_alignment(line):
         elif strand == '++' or strand == '--': seq, pos = seq[options.trim_fillin:], pos+options.trim_fillin
     if sam_format and insert > 0: seq = seq[:int(col[7])-1-pos] # remove overlapped regions in paired hits, SAM format only
     return (seq, strand[0], cr, pos)
-
+#Function def get_alignment(line) END
+    
 # open pipes to alignment files
 pipes = []
 for infile in infiles:
-    nline = 0
     if infile.strip() == '-': sam_format, fin, infile = True, os.popen('%ssamtools view -Sh -' % options.sam_path), 'STDIN'
     elif infile[-4:].upper() == '.SAM': sam_format, fin = True, os.popen('%ssamtools view -S %s' % (options.sam_path, infile)) 
     elif infile[-4:].upper() == '.BAM': sam_format, fin = True, os.popen('%ssamtools view %s' % (options.sam_path, infile))
+    elif infile[-4:].upper() == 'BSAM': sam_format, fin = True, open(infile)
     else: sam_format, fin = False, open(infile)
     pipes.append((sam_format,fin))
 
@@ -113,6 +125,9 @@ for line in open(options.reffile):
 if len(options.chroms) == 0 or cr in options.chroms: ref[cr] = seq.upper()
 del seq
 
+disp('ref size (chr): %s ...' % len(ref))
+disp('ref size (bytes): %s ...' % sys.getsizeof(ref))
+
 meth, depth, coverage, meth1, depth1 = {}, {}, {}, {}, {}
 for cr in ref:
     meth[cr] = array.array('H', [0]) * len(ref[cr])
@@ -125,6 +140,7 @@ for cr in ref:
 options.chroms = set(ref.keys())
 BS_conversion = {'+': ('C','T','G','A'), '-': ('G','A','C','T')}
 nmap = 0
+disp('loading input file: %s ...' % infiles)
 for sam_format, fin in pipes:
     nline = 0
     if len(options.alignfile) > 0: pout = os.popen('%ssamtools view -bS - > %s' % (options.sam_path, options.alignfile), 'w')
@@ -165,8 +181,8 @@ for sam_format, fin in pipes:
     
     fin.close()
     if len(options.alignfile) > 0: pout.close()
-
 disp('read %d lines' % nline, nt=1)
+
 if options.combine_CpG:
     disp('combining CpG methylation from both strands ...')
     for cr in depth:

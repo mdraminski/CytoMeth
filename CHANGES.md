@@ -1,5 +1,9 @@
 CytoMeth - Changes
 =============
+## Version 0.9.19
+* new parameter in config file methratio_processing
+* bunch of fixes and improvements
+
 ## Version 0.9.18
 * some rare issues in exporting to bed file fixed
 * improved continuation of calculation after the stop

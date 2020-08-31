@@ -16,9 +16,9 @@ source("./R/mainQC.R")
 
 #########################################
 CytoMethInfo <- function(){
-  cat("#######################################\n")
-  cat("### CytoMeth ver 0.9.18 (06-03-2020) ###\n")
-  cat("#######################################\n")
+  cat("#########################################\n")
+  cat("### CytoMeth ver 0.9.19 (Aug 21 2020) ###\n")
+  cat("#########################################\n")
   cat("### Created by Michal Draminski, Agata Dziedzic, Rafal Guzik, Bartosz Wojtas and Michal J. Dabrowski ###\n")
   cat("### Computational Biology Lab, Polish Academy of Science, Warsaw, Poland ###\n")
   cat("### Neurobiology Center, Nencki Institute of Experimental Biology, Warsaw, Poland ###\n\n")
@@ -217,8 +217,16 @@ CytoMethSingleSample <- function(config, input_file){
   }else{
     config <- config_ret
   }
-  
+
   cat(paste0("###### 9. Determine Methylation Percentage [BSMAP] ######\n"))
+  config_ret <- run_Methratio(config, config_tools)
+  if(is.null(config_ret)){
+    return(FALSE)
+  }else{
+    config <- config_ret
+  }
+
+  cat(paste0("###### 10. Finalize Methylation and calculate stats ######\n"))
   config_ret <- run_CalcMethylation(config, config_tools)
   if(is.null(config_ret)){
     return(FALSE)
@@ -229,7 +237,7 @@ CytoMethSingleSample <- function(config, input_file){
   #Remove Temp files
   if(config$clean_tmp_files){
     print("Removing temporary files...")
-    files_removed <- sapply(unique(config$tmp_files), file.remove)
+    files_removed <- sapply(unique(config$tmp_files), fileRemoveIfExists)
     print("Done.")
   }
   
