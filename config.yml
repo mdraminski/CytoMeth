@@ -16,8 +16,8 @@ ref_data_path: "./referenceData/"
 ### Reference Data - Files
 ref_data_sequence_file: "hg38.fa"
 ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
-#ref_data_sequence_file: "hg38_phage.fa"
-#ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed"
+#ref_data_sequence_file: "hg38_NC_001416.fa"
+#ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_NC_001416.bed"
 ref_control_sequence_name: "NC_001416"
 
 ### Reference Data - Remaining Files

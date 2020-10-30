@@ -53,15 +53,13 @@ def get_alignment(line):
         if options.pair and 'P' not in flag: return []
         cr, pos, cigar, seq, strand, insert = col[2], int(col[3])-1, col[5], col[9], '', int(col[8])
         if cr not in options.chroms: return []
-        
-        print(line)
-        print("cr="+str(cr))
-        print("pos="+str(pos))
-        print("cigar="+str(cigar))
-        print("seq="+str(seq))
-        print("strand="+str(strand))
-        print("insert="+str(insert))
-        
+        #print(line)
+        #print("cr="+str(cr))
+        #print("pos="+str(pos))
+        #print("cigar="+str(cigar))
+        #print("seq="+str(seq))
+        #print("strand="+str(strand))
+        #print("insert="+str(insert))
         strand_index = line.find('ZS:Z:')
         assert strand_index >= 0, 'missing strand information "ZS:Z:xx"'
         strand = line[strand_index+5:strand_index+7]

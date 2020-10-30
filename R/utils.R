@@ -532,7 +532,7 @@ getCovSummary <- function(config, min_coverage = c(7,8,9,10,11,12,13), result_fo
   for(i in 1:length(result_files)){
     cat(paste0('Reading file: ', result_files[i], '\n'))
     methyl_result_data <- readMethResult(result_files[i], version = 2)
-    cat(paste0('Calculation Covegares: ', result_files[i], '\n'))
+    cat(paste0('Calculation Coverages: ', result_files[i], '\n'))
     for(c in min_coverage){
       number_of_Cs_in_panel_CpG_cov_minC <- nrow(filterMethResult(methyl_result_data, config$ref_control_sequence_name, context = c('CG'), min_coverage = c))
       number_of_Cs_in_panel_CpG_cov_maxC <- nrow(filterMethResult(methyl_result_data, config$ref_control_sequence_name, context = c('CG'), max_coverage = c))

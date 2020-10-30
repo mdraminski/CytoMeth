@@ -604,7 +604,7 @@ run_CalcMethylation <- function(config, config_tools){
   print(paste0("Saving the file: ",methyl_result_prime_file))
   data.table::fwrite(methyl_result_data, file = methyl_result_prime_file, quote=FALSE, sep='\t', row.names = F, col.names = F)
   
-  ######  BEDTools - intersect capture region (only if file is defined)
+  ######  BEDTools - intersect capture region (only if the file is defined)
   if(str_trim(config$ref_data_intervals_file) != ''){
     if(config$overwrite_results | !(file.exists(methyl_result_file))) {
       src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 

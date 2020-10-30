@@ -1,5 +1,9 @@
 CytoMeth - Changes
 =============
+## Version 0.9.20
+* updated reference files 
+* updated documentation
+
 ## Version 0.9.19
 * new parameter in config file methratio_processing
 * bunch of fixes and improvements

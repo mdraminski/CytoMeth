@@ -190,14 +190,19 @@ conda info --json > conda.info
 ```
 This file is also automatically created during installation process.
 
-
 ### Reference Files
-Reference files required by CytoMeth are automatically installed by '*install.data.sh*' script. If you would like to download them manually plese run the following commands in a terminal window:
+Reference files required by CytoMeth are automatically installed by '*install.data.sh*' script. This data contains human reference genome (hg38), SeqCap_EPI_CpGiant_hg38 Roche methylome panel, Ensemble gene annotation data and CpG Island coordinates data. If you would like to download them manually plese run the following commands in a terminal window:
 
 ```bash
-wget -c -O ./referenceData/CytoMethReferenceData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/referenceData/CytoMethReferenceData.zip;
-unzip ./referenceData/CytoMethReferenceData.zip;
+wget -c -O ./referenceData/CytoMethRefData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/referenceData/CytoMethRefData.zip;
+unzip ./referenceData/CytoMethRefData.zip;
 ```
+Set of optional reference files that is also available to download contains contains human reference genome (hg38) inclding additional reference genome NC_001416 phage widely used for conversion efficiency evaluation. 
+```bash
+wget -c -O ./referenceData/CytoMethRefDataNC_001416.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/referenceData/CytoMethRefDataNC_001416.zip;
+unzip ./referenceData/CytoMethRefDataNC_001416.zip;
+```
+
 All reference files are located in */referenceData/* directory by default.
 
 ### Basic Example Data

@@ -17,7 +17,7 @@ source("./R/mainQC.R")
 #########################################
 CytoMethInfo <- function(){
   cat("#########################################\n")
-  cat("### CytoMeth ver 0.9.19 (Aug 21 2020) ###\n")
+  cat("### CytoMeth ver 0.9.20 (Oct 30 2020) ###\n")
   cat("#########################################\n")
   cat("### Created by Michal Draminski, Agata Dziedzic, Rafal Guzik, Bartosz Wojtas and Michal J. Dabrowski ###\n")
   cat("### Computational Biology Lab, Polish Academy of Science, Warsaw, Poland ###\n")
