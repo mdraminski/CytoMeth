@@ -622,3 +622,9 @@ getBSMAPIndexInterval <- function(mem_size){
   indexInterval <- paste0("-I ", indexInterval)
   return(indexInterval)
 }
+
+##############################
+######## specify_decimal  ####
+specify_decimal <- function(x, k){
+  trimws(format(ifelse(round(x, k)!=0,round(x, k),1/(10^k)), nsmall=k, scientific=F))
+}

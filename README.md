@@ -402,11 +402,21 @@ CytoMeth(conf, file.path(conf$input_path,"small_FAKE03_R1.fastq"),
 ## Output files
 
 ### Methylation beta values
-The result files are located in *'/results/methyl_results'* directory. For each sample there are three output files:
+The result files are located in *'/results/methyl_results'* directory - for each input sample there are two types of output files:
 
-- 'SAMPLENAME.methylation_results.bed.panel'
-- 'SAMPLENAME.methylation_results.bed.panel.no_control.CpG_min10'
-- 'SAMPLENAME.methylation_results.bed.panel.no_control.non_CpG_min10'
+- 'SAMPLENAME.methylation_results.bed' - text file in bed format
+- 'SAMPLENAME.methylation_results.rds' - binary file easy to read in R by *readRDS* function
+
+The example output file is presented below:
+```R
+    chr  start    end context betaVal strand coverage numCs numTs  posCs
+100 chr1 135081 135082     CHH   0.000      +       18     0    18 135081
+101 chr1 135082 135083     CHG   0.000      +       18     0    18 135082
+102 chr1 135083 135084     CHG   0.000      -       14     0    14 135084
+103 chr1 135085 135086     CHG   0.000      +       19     0    19 135085
+104 chr1 135086 135087      CG   0.947      +       19    18    19 135086
+105 chr1 135091 135092     CHH   0.000      -       20     0    20 135092
+```
 
 ### FastQC report files
 The result files are located in *'/results/QC/FastQC'* directory. For each sample there are four output files:

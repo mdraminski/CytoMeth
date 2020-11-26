@@ -1,5 +1,9 @@
 CytoMeth - Changes
 =============
+## Version 0.9.21
+* minor updates
+* updated documentation
+
 ## Version 0.9.20
 * updated reference files 
 * updated documentation

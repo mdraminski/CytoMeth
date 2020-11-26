@@ -56,8 +56,10 @@ CytoMeth <- function(config, input_file = NULL){
       stop("Input directory does not contain any '*.fastq' or '*.bam' files. [lower case extension is required]")
     }
     input_files <- input_files[grepl("_R1.fastq|_r1.fastq|.bam",input_files)]
+    if(length(input_files)==0){
+      stop("Input directory does not contain any '*_R1.fastq'/'_R2.fastq or' '*.bam' files.")
+    }
     cat(paste0("Input files #",length(input_files)," [", paste0(input_files, collapse = ", "),"]","\n"))
-    i=1
     for(i in 1:length(input_files)){
       sample_name <- gsub("_R1.fastq|_r1.fastq|_R2.fastq|_r2.fastq|.bam", "", input_files[i])
       cat(paste0("Running Processing on Sample: #",i, "/",length(input_files),"\n"))

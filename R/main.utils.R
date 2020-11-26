@@ -339,7 +339,8 @@ run_ClipOverlap <- function(config, config_tools){
   }
   
   if(!checkIfFileExists(paste0(clipping_result_file,".clipped.bam.bai"))) return(NULL)
-    
+  
+  config$tmp_files <- c(config$tmp_files, paste0(clipping_result_file,".clipped.bam"), paste0(clipping_result_file,".clipped.bam.bai"))
   return(config)
 }
 
