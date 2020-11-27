@@ -17,7 +17,7 @@ source("./R/mainQC.R")
 #########################################
 CytoMethInfo <- function(){
   cat("#########################################\n")
-  cat("### CytoMeth ver 0.9.20 (Oct 30 2020) ###\n")
+  cat("### CytoMeth ver 0.9.19 (Aug 21 2020) ###\n")
   cat("#########################################\n")
   cat("### Created by Michal Draminski, Agata Dziedzic, Rafal Guzik, Bartosz Wojtas and Michal J. Dabrowski ###\n")
   cat("### Computational Biology Lab, Polish Academy of Science, Warsaw, Poland ###\n")
@@ -105,7 +105,7 @@ CytoMethSingleSample <- function(config, input_file){
     if(!file.exists(config$file_r2)){
       print(paste0("Error! File ", config$file_r2, " does not exist!"))
       return(F)
-    }      
+    }
   }else if(tolower(file_ext(input_file)) == "bam"){
     config$file_bam <- input_file
     if(!file.exists(config$file_bam)){
@@ -118,6 +118,7 @@ CytoMethSingleSample <- function(config, input_file){
   }
 
   methyl_result_file <- paste0(file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"], sample_basename),".methylation_results.bed")
+  
   if(!config$overwrite_results & file.exists(methyl_result_file)){
     cat('#############################################\n')
     cat(paste0("Sample '",sample_basename,"' is already processed. Skipping the file!\n"))
@@ -233,6 +234,16 @@ CytoMethSingleSample <- function(config, input_file){
   }else{
     config <- config_ret
   }
+  
+  
+  cat(paste0("###### 10B. Determine Methylation Percentage and possible SNPs [BS-Snper] ######\n"))
+  config_ret <- run_BSsnper(config, config_tools)
+  if(is.null(config_ret)){
+    return(FALSE)
+  }else{
+    config <- config_ret
+  }
+  
   
   #Remove Temp files
   if(config$clean_tmp_files){

@@ -349,7 +349,7 @@ run_ClipOverlap <- function(config, config_tools){
 run_MappingMetrics <- function(config, config_tools){
   sample_basename <- basename_sample(config$file_bam)
   filtered_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="filter_bam","temp_results_dirs"], sample_basename)
-  rmdups_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mark_duplicates_top","temp_results_dirs"], sample_basename)
+  rmdups_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mark_duplicates_top","temp_results_dirs"], sample_basename) ### TODO ?? small_FAKE03.rmdups.bam not small_FAKE03.clipped.bam
 
   ######  picard - Basic Mapping Metrics
   basic_mapping_metrics_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="basic_mapping_metrics","temp_results_dirs"], sample_basename)
@@ -371,7 +371,7 @@ run_MappingMetrics <- function(config, config_tools){
   if(!checkIfFileExists(paste0(basic_mapping_metrics_result_file,"_basic_mapping_metrics.txt"))) return(NULL)
 
   ######  picard - Insert Size Metrics
-  insert_size_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="insert_size","temp_results_dirs"], sample_basename)
+  insert_size_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="insert_size","temp_results_dirs"], sample_basename)  ### TODO ??? small_FAKE03.filtered.bam? Shouldn't be .clipped.bam?
   if(config$overwrite_results | !(file.exists(paste0(insert_size_result_file,"_insert_size_metrics.txt")))) {
     src_command <- paste0("java -Xms", f2si(config$memory)," -Xmx", f2si(config$memory), 
                           config$picard_parser,
@@ -398,7 +398,7 @@ run_MappingMetrics <- function(config, config_tools){
                             " intersect -bed -abam ",  paste0(rmdups_result_file, ".rmdups.bam"), 
                             " -b ", file.path(config$ref_data_path, config$ref_data_intervals_file), 
                             " > ",paste0(on_target_result_file, "_on_target_reads"))
-      runSystemCommand(config$myAppName, 'BEDTools', 'Intersect on_target_reads', src_command, config$verbose)
+      runSystemCommand(config$myAppName, 'BEDTools', 'Intersect on_target_reads', src_command, config$verbose)  ### TODO ??? small_FAKE03.rmdups.bam? Shouldn't be .clipped.bam?
     }else{
       ## If the panel file is not defined use convert bam2bed - (bedtools bamtobed -i reads.bam)
       src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
@@ -604,7 +604,7 @@ run_CalcMethylation <- function(config, config_tools){
   print(paste0("Saving the file: ",methyl_result_prime_file))
   data.table::fwrite(methyl_result_data, file = methyl_result_prime_file, quote=FALSE, sep='\t', row.names = F, col.names = F)
   
-  ######  BEDTools - intersect capture region (only if the file is defined)
+  ######  BEDTools - intersect capture region (only if file is defined)
   if(str_trim(config$ref_data_intervals_file) != ''){
     if(config$overwrite_results | !(file.exists(methyl_result_file))) {
       src_command <- paste0(file.path(config$anaconda_bin_path, config$bedtools), 
@@ -641,3 +641,76 @@ run_CalcMethylation <- function(config, config_tools){
   config$tmp_files <- c(config$tmp_files, methyl_result_file_txt, methyl_result_prime_file)
   return(config)
 }
+
+
+
+##################################
+######  run_BSsnper  #############
+##################################
+run_BSsnper <- function(config, config_tools){
+  
+  meth_cg_suf  <- '.meth.cg'
+  meth_chg_suf <- '.meth.chg'
+  meth_chh_suf <- '.meth.chh'
+  vcf_suf      <- '.bssnper.vcf'
+  
+  sample_basename     <- basename_sample(config$file_bam)
+  bssnper_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="bssnper","temp_results_dirs"], sample_basename)
+  bssnper_log_file    <- file.path(file.path(config$results_path,"logs"), paste0(sample_basename, "_", config_tools[config_tools$process=="bssnper","logfile"]))
+  bssnper_candidate_snps_file <- paste0(bssnper_result_file, '.snp.candidate.out')
+  clipping_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="clip_overlap","temp_results_dirs"], sample_basename)
+  
+  if(config$overwrite_results | 
+     !(file.exists(paste0(bssnper_result_file, vcf_suf )) 
+       & file.exists(paste0(bssnper_result_file, meth_cg_suf ))
+       & file.exists(paste0(bssnper_result_file, meth_chg_suf)) 
+       & file.exists(paste0(bssnper_result_file, meth_chh_suf)) 
+      )
+     ){
+    
+    panel_command <- ""
+    
+    if(str_trim(config$ref_data_intervals_file != "")){
+      panel_command <- paste0("--regions-file ", file.path(config$ref_data_path, config$ref_data_intervals_file))
+    }
+    
+    src_command <- paste0("perl "      , file.path(config$tools_path, config$bssnper),
+                          " --fa "     , file.path(config$ref_data_path, config$ref_data_sequence_file),
+                          " --input "  , paste0(clipping_result_file, '.clipped.bam'), 
+                          " --output " , bssnper_candidate_snps_file,
+                          " --methcg " , paste0(bssnper_result_file, meth_cg_suf ),
+                          " --methchg ", paste0(bssnper_result_file, meth_chg_suf),
+                          " --methchh ", paste0(bssnper_result_file, meth_chh_suf),
+                          " --minhetfreq 0.1 ",
+                          " --minhomfreq 0.85 ",
+                          " --minquali 15 ",
+                          " --mincover 10 ",
+                          " --maxcover 1000 ",
+                          " --minread2 2 ",
+                          " --errorate 0.02 ",
+                          " --mapvalue 20 ",
+                          panel_command,
+                          " > ", paste0(bssnper_result_file, vcf_suf),
+                          " 2> ", bssnper_log_file
+                          )
+    
+    runSystemCommand(config$myAppName, 'BS-Snper', 'BS-Snper calling', src_command, config$verbose)
+    
+  }else{
+    skipProcess(config$myAppName, 'BS-Snper', 'BS-Snper calling',
+                file.path(config$results_path, config_tools[config_tools$proces=="bssnper","temp_results_dirs"],"/"))
+  }
+  
+  config$tmp_files <- c(config$tmp_files, bssnper_candidate_snps_file)
+  return(config)
+}
+
+
+
+
+
+
+
+
+
+
