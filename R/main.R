@@ -124,7 +124,7 @@ CytoMethSingleSample <- function(config, input_file){
     cat('#############################################\n')
     cat(paste0("Sample '",sample_basename,"' is already processed. Skipping the file!\n"))
     cat('#############################################\n')
-    return(T)
+    return(T)  ## TODO what if in the next steps I have only partial results??
   }
 
   cat('#############################################\n')
@@ -220,21 +220,35 @@ CytoMethSingleSample <- function(config, input_file){
     config <- config_ret
   }
 
-  cat(paste0("###### 9. Determine Methylation Percentage [BSMAP] ######\n"))
-  config_ret <- run_Methratio(config, config_tools)
-  if(is.null(config_ret)){
-    return(FALSE)
-  }else{
-    config <- config_ret
+  if (config$meth_tool == 'methratio') {
+  
+    cat(paste0("###### 9A. Determine Methylation Percentage [BSMAP] ######\n"))
+    config_ret <- run_Methratio(config, config_tools)
+    if(is.null(config_ret)){
+      return(FALSE)
+    }else{
+      config <- config_ret
+    }
+  
+    cat(paste0("###### 10. Finalize Methylation and calculate stats ######\n"))
+    config_ret <- run_CalcMethylation(config, config_tools)
+    if(is.null(config_ret)){
+      return(FALSE)
+    }else{
+      config <- config_ret
+    }
+    
+  } else {
+    cat(paste0("###### 9B. Determine Methylation Percentage and possible SNPs [BS-Snper] ######\n"))
+    config_ret <- run_BSsnper(config, config_tools)
+    if(is.null(config_ret)){
+      return(FALSE)
+    }else{
+      config <- config_ret
+    }
   }
-
-  cat(paste0("###### 10. Finalize Methylation and calculate stats ######\n"))
-  config_ret <- run_CalcMethylation(config, config_tools)
-  if(is.null(config_ret)){
-    return(FALSE)
-  }else{
-    config <- config_ret
-  }
+  
+  
   
   #Remove Temp files
   if(config$clean_tmp_files){

@@ -19,3 +19,4 @@ insert_size,picard,QC/Insert_Size,
 on_target_reads,bedtools,QC/On_target_reads,
 depth_of_coverage,gatk,QC/Depth_of_coverage,depth_of_cov.log
 methratio,bsmap,methyl_results,methyl_bsmap.log
+bssnper,bssnper,bssnper,bssnper.log

@@ -1,23 +1,23 @@
 ### General Params
 verbose: TRUE
-threads: 12
-memory: 12G
+threads: 4
+memory: 20G
 overwrite_results: FALSE
-clean_tmp_files: TRUE
+clean_tmp_files: FALSE
 plot_format: "pdf"
 
 ### in/out paths
 input_path: "./input/"
 results_path: "./results/"
-#anaconda_bin_path: "/opt/anaconda/bin/"
+anaconda_bin_path: "~/anaconda3/envs/pymeth/bin/"
 
 ### Reference Data - Path
 ref_data_path: "./referenceData/"
 ### Reference Data - Files
 ref_data_sequence_file: "hg38.fa"
 ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
-#ref_data_sequence_file: "hg38_NC_001416.fa"
-#ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_NC_001416.bed"
+#ref_data_sequence_file: "hg38_phage.fa"
+#ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed"
 ref_control_sequence_name: "NC_001416"
 
 ### Reference Data - Remaining Files
@@ -29,5 +29,8 @@ ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
 trimmomatic_MINLEN: 50
 sqtk_run: FALSE
 sqtk_subset: 10000000
+meth_tool: 'bssnper' # ['bssnper', 'methratio']
 ### methratio_processing: ["allCHR","batchCHR","batchCHR_HDD"]
 methratio_processing: "batchCHR_HDD"
+
+

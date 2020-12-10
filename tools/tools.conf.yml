@@ -15,7 +15,7 @@ picard_ver: 1
 gatk: "GATK/GenomeAnalysisTK.jar"
 fastqc: "fastqc"
 seqtk: "seqtk"
-bisSNP:
+bssnper: "BS-Snper/BS-Snper.pl"
 
 ### python2 path
-python2: "python2"
+python2: "~/anaconda3/envs/pymeth/bin/python2"
