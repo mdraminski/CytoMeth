@@ -4,6 +4,7 @@ threads: 12
 memory: 12G
 overwrite_results: FALSE
 clean_tmp_files: TRUE
+remove_clipped_bam: FALSE
 plot_format: "pdf"
 
 ### in/out paths
@@ -14,10 +15,10 @@ results_path: "./results/"
 ### Reference Data - Path
 ref_data_path: "./referenceData/"
 ### Reference Data - Files
-ref_data_sequence_file: "hg38.fa"
-ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
-#ref_data_sequence_file: "hg38_NC_001416.fa"
-#ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_NC_001416.bed"
+#ref_data_sequence_file: "hg38.fa"
+#ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver.bed"
+ref_data_sequence_file: "hg38_NC_001416.fa"
+ref_data_intervals_file: "SeqCap_EPI_CpGiant_hg38_custom_liftOver_NC_001416.bed"
 ref_control_sequence_name: "NC_001416"
 
 ### Reference Data - Remaining Files
@@ -29,5 +30,8 @@ ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
 trimmomatic_MINLEN: 50
 sqtk_run: FALSE
 sqtk_subset: 10000000
-### methratio_processing: ["allCHR","batchCHR","batchCHR_HDD"]
-methratio_processing: "batchCHR_HDD"
+min_depth: 1
+#meth_tool: ['methratio', 'bssnper']
+meth_tool:  ['methratio','bssnper']
+#meth_processing: ["allCHR","batchCHR"]
+meth_processing: "batchCHR"

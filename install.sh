@@ -58,6 +58,15 @@ while true; do
     esac
 done
 
+echo "###################################"
+echo "Compilation of BS-Snper"
+echo "###################################"
+cd tools/BS-Snper/
+./BS-Snper.sh
+./clean.dir.sh
+cd ..
+cd ..
+
 echo "########################"
 echo "Installation is Finished"
 echo "########################"

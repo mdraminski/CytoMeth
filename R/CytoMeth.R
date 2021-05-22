@@ -1,3 +1,4 @@
+#rm(list = ls());cat("\014");
 source("./R/main.R")
 #read default config from the config.yml file
 conf <- readConfig()

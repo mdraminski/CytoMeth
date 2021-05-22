@@ -18,4 +18,5 @@ basic_mapping_metrics,picard,QC/Basic_Mapping_Metrics,
 insert_size,picard,QC/Insert_Size,
 on_target_reads,bedtools,QC/On_target_reads,
 depth_of_coverage,gatk,QC/Depth_of_coverage,depth_of_cov.log
-methratio,bsmap,methyl_results,methyl_bsmap.log
+methratio,bsmap,methyl_results/methratio,methratio.log
+bssnper,bssnper,methyl_results/bssnper,bssnper.log

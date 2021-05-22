@@ -1,6 +1,6 @@
 ################################
 ###### get and save SAMPLE_QC_summary ####
-#config <- conf; save = F; result_format = 'bed'; sample_basename <- "DA01"; sample_basename <- "small_FAKE01"; 
+#config <- conf; save = F; result_format = 'bed'; sample_basename <- "DA01"; sample_basename <- "small_FAKE01";
 getSampleQCSummary <- function(sample_basename, config, result_format = c('bed','rds')){
   result_format <- checkFormat(result_format, supported = c('bed','rds'))
   config_tools <- read.csv(file.path(config$tools_path, config$tools_config), stringsAsFactors = FALSE)
@@ -92,36 +92,56 @@ getSampleQCSummary <- function(sample_basename, config, result_format = c('bed',
   }
   
   ### Calculate conversion efficiency
-  methyl_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"], sample_basename)
-  methyl_result_data <- as.data.frame(readMethResult(paste0(methyl_result_file,".methylation_results.", result_format),version=2))
-  #head(methyl_result_data)
-  if(!is.null(methyl_result_data)){
-    control <- methyl_result_data[methyl_result_data$chr == config$ref_control_sequence_name,]
-    sampleQC$Number_of_Cs_in_control <- nrow(control)
-    conversion_eff <- c(100 * (1-sum(control$numCs)/sum(control$numTs)))
-    sampleQC$Conversion_eff <- conversion_eff
-    
-    #Add to QC Sample report
-    methyl_res_panel_df_no_control <- methyl_result_data[methyl_result_data$chr != config$ref_control_sequence_name,]
-    sampleQC$Number_of_Cs_in_panel <- nrow(methyl_res_panel_df_no_control)
-    
-    methyl_res_panel_df_no_control_CpG <- methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context %in% c('CG'),]
-    sampleQC$Number_of_Cs_in_panel_CpG <- nrow(methyl_res_panel_df_no_control_CpG)
-    
-    methyl_res_panel_df_no_control_nonCpG <- methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context %in% c('CHG','CHH'),]
-    sampleQC$Number_of_Cs_in_panel_non_CpG <- nrow(methyl_res_panel_df_no_control_nonCpG)
-    
-    sampleQC$Number_of_Cs_in_panel_CpG_cov_min10 <- nrow(filterMethResult(methyl_result_data, config$ref_control_sequence_name, context = c('CG'), min_coverage = 10))
-    sampleQC$Number_of_Cs_in_panel_non_CpG_cov_min10 <- nrow(filterMethResult(methyl_result_data, config$ref_control_sequence_name, context = c('CHG','CHH'), min_coverage = 10))
-
-    #methyl_res_panel_df_no_control_CpG_max9 <- methyl_res_panel_df_no_control_CpG[methyl_res_panel_df_no_control_CpG$coverage<10,]
-    sampleQC$Number_of_Cs_in_panel_CpG_cov_max9 <- sum(methyl_res_panel_df_no_control_CpG$coverage<10)
-    
-    sampleQC$Prc_of_Cs_in_panel_CpG_cov_min10 <- 100 * (sampleQC$Number_of_Cs_in_panel_CpG_cov_min10/sampleQC$Number_of_Cs_in_panel_CpG)
-    sampleQC$Prc_of_Cs_in_panel_CpG_cov_max9 <- 100 * (sampleQC$Number_of_Cs_in_panel_CpG_cov_max9/sampleQC$Number_of_Cs_in_panel_CpG)
+  qc_added <- FALSE
+  for(i in 1:length(config$meth_tool)){
+    methyl_result_file <- file.path(config$results_path, config_tools[config_tools$proces==config$meth_tool[i],"temp_results_dirs"], sample_basename)
+    methyl_result_data <- as.data.frame(readMethResult(paste0(methyl_result_file,".methylation_results.", result_format), version=2))
+    #head(methyl_result_data)
+    if(!is.null(methyl_result_data)){
+      qc <- get_conversion_efficiency(methyl_result_data, config)
+      if(!qc_added){
+        sampleQC <- c(sampleQC, qc)
+        qc_added <- TRUE
+      }
+      names(qc) <- paste0(names(qc),"_",config$meth_tool[i])
+      sampleQC <- c(sampleQC, qc)
+    }else{
+      print(paste0("methyl_result_data is empty!"))
+    }
   }
   
   return(sampleQC)
+}
+
+####################################################
+###### get_conversion_efficiency  ####
+get_conversion_efficiency <- function(methyl_data, config){
+  qc <- list()
+  control <- methyl_data[methyl_data$chr == config$ref_control_sequence_name,]
+  qc$Number_of_Cs_in_control <- nrow(control)
+  conversion_eff <- c(100 * (1-sum(control$numCs)/sum(control$numTs)))
+  qc$Conversion_eff <- conversion_eff
+  
+  #Add to QC Sample report
+  methyl_res_panel_df_no_control <- methyl_data[methyl_data$chr != config$ref_control_sequence_name,]
+  qc$Number_of_Cs_in_panel <- nrow(methyl_res_panel_df_no_control)
+  
+  methyl_res_panel_df_no_control_CpG <- methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context %in% c('CG'),]
+  qc$Number_of_Cs_in_panel_CpG <- nrow(methyl_res_panel_df_no_control_CpG)
+  
+  methyl_res_panel_df_no_control_nonCpG <- methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context %in% c('CHG','CHH'),]
+  qc$Number_of_Cs_in_panel_non_CpG <- nrow(methyl_res_panel_df_no_control_nonCpG)
+  
+  qc$Number_of_Cs_in_panel_CpG_cov_min10 <- nrow(filterMethResult(methyl_data, config$ref_control_sequence_name, context = c('CG'), min_coverage = 10))
+  qc$Number_of_Cs_in_panel_non_CpG_cov_min10 <- nrow(filterMethResult(methyl_data, config$ref_control_sequence_name, context = c('CHG','CHH'), min_coverage = 10))
+  
+  #methyl_res_panel_df_no_control_CpG_max9 <- methyl_res_panel_df_no_control_CpG[methyl_res_panel_df_no_control_CpG$coverage<10,]
+  qc$Number_of_Cs_in_panel_CpG_cov_max9 <- sum(methyl_res_panel_df_no_control_CpG$coverage<10)
+  
+  qc$Prc_of_Cs_in_panel_CpG_cov_min10 <- 100 * (qc$Number_of_Cs_in_panel_CpG_cov_min10/qc$Number_of_Cs_in_panel_CpG)
+  qc$Prc_of_Cs_in_panel_CpG_cov_max9 <- 100 * (qc$Number_of_Cs_in_panel_CpG_cov_max9/qc$Number_of_Cs_in_panel_CpG)
+  
+  return(qc)
 }
 
 ####################################################
@@ -152,7 +172,7 @@ readAllQCSummary <- function(config, save = T){
   qc_summary <- lapply(input_files, function(x) as.data.frame(yaml::read_yaml(x), stringsAsFactors = F))
   qc_summary <- data.frame(rbindlist(qc_summary))
   
-  no_numeric_cols <- c("Sample_ID", "processing_time")
+  no_numeric_cols <- c("Sample_ID", "processing_time", "methratio_time", "bssnper_time")
   for(curcol in names(qc_summary)){
     if(!curcol %in% no_numeric_cols){
       qc_summary[,curcol] <- as.numeric(qc_summary[,curcol])
@@ -167,7 +187,10 @@ readAllQCSummary <- function(config, save = T){
 
 ####################################################
 #### PLOT: Number of sites in CpG context covered by more/less than 10
-plotSitesCpG <- function(cov_summary_data, config, min_coverage = 10, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+plotSitesCpG <- function(cov_summary_data, config, meth_tool = NA, min_coverage = 10, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
+  
   cov <- min_coverage
   if(!cov %in% cov_summary_data$min_coverage){
     warning(paste0('Coverage: ',cov, ' is not present in input cov_summary_data.'))
@@ -197,7 +220,7 @@ plotSitesCpG <- function(cov_summary_data, config, min_coverage = 10, pal = brew
     ggtitle(paste0("Number of sites in CpG context \ncovered by more/less than ", cov))
   
   if(save){
-    ggsave(filename = file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy",cov,'.',config$plot_format)), plot = gg, device=config$plot_format)
+    ggsave(filename = file.path(config$results_path,"QC_report/",paste0(meth_tool,'_',"SummarySitesCovBy",cov,'.',config$plot_format)), plot = gg, device=config$plot_format)
   }
   
   return(gg)
@@ -205,7 +228,10 @@ plotSitesCpG <- function(cov_summary_data, config, min_coverage = 10, pal = brew
 
 ####################################################
 #### PLOT: Number of sites covered by minimum 10 reads \nseparately for sites in CpG and non-CpG context
-plotSitesNonCpG <- function(cov_summary_data, config, min_coverage = 10, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+plotSitesNonCpG <- function(cov_summary_data, config, meth_tool = NA, min_coverage = 10, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
+  
   cov <- min_coverage
   if(!cov %in% cov_summary_data$min_coverage){
     warning(paste0('Coverage: ',cov, ' is not present in input cov_summary_data.'))
@@ -231,7 +257,7 @@ plotSitesNonCpG <- function(cov_summary_data, config, min_coverage = 10, pal = b
     xlab("Sample ID") +
     ggtitle(paste0("Number of cytosines covered by at least ",cov," reads \nin the CpG and non-CpG context"))
   if(save){
-    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("SummarySitesCovBy",cov,"CpGnonCpG.",config$plot_format)), plot=gg, device=config$plot_format)
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0(meth_tool,'_',"SummarySitesCovBy",cov,"CpGnonCpG.",config$plot_format)), plot=gg, device=config$plot_format)
   }
   
   return(gg)
@@ -252,9 +278,12 @@ plotSingleMethStats <- function(single_meth_data){
 
 ####################################################
 ###### Generate and save Basic MethylKit stats for all samples #######
-plotMethStats <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T){
+plotMethStats <- function(meth_data, config, meth_tool = NA, pal = brewer.pal(8, "Dark2"), save = T){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
+  
   for(i in 1:length(meth_data)){
-    openPlotFile(file.path(config$results_path, 'QC_report', paste0(meth_data[[i]]@sample.id,"_histCpGStats.", config$plot_format)))
+    openPlotFile(file.path(config$results_path, 'QC_report', paste0(meth_tool,"_",meth_data[[i]]@sample.id,"_histCpGStats.", config$plot_format)))
     plotSingleMethStats(meth_data[[i]])
     dev.off()
   }
@@ -263,7 +292,9 @@ plotMethStats <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save 
 
 ####################################################
 ###### PLOT: Generate and save Coverage boxplot for all samples (by default log10 coverage)
-plotMethStatsSummary <- function(meth_data, config, log = TRUE, pal = brewer.pal(8, "Dark2"), save = T, fontsize = 10){
+plotMethStatsSummary <- function(meth_data, config, meth_tool = NA, log = TRUE, pal = brewer.pal(8, "Dark2"), save = T, fontsize = 10){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
   
   sampleCov <- lapply(meth_data, function(x){
     data.frame(coverage = x$coverage, sample_id = x@sample.id)
@@ -292,7 +323,7 @@ plotMethStatsSummary <- function(meth_data, config, log = TRUE, pal = brewer.pal
     scale_x_discrete(name = "Sample ID") 
   
   if(save){
-    plotfile <- file.path(config$results_path,'QC_report',paste0('SummaryCpGCoverage',outfile_sufix,".",config$plot_format))
+    plotfile <- file.path(config$results_path,'QC_report',paste0(meth_tool,'_','SummaryCpGCoverage',outfile_sufix,".",config$plot_format))
     ggsave(plotfile, gg)
   }
   
@@ -301,16 +332,17 @@ plotMethStatsSummary <- function(meth_data, config, log = TRUE, pal = brewer.pal
 
 ####################################################
 ### PLOT: Beta Values Boxplot
-#meth_data <- methData
-#config <- conf
-plotBetaValuesSummary <- function(meth_data, config, sample_size = 100000, pal = brewer.pal(8, "Dark2"), save = T, fontsize = 10){
+#config <- conf; meth_data <- methData; sample_size = 100000; pal = brewer.pal(8, "Dark2"); save = T; fontsize = 10;
+plotBetaValuesSummary <- function(meth_data, config, meth_tool = NA, sample_size = 100000, pal = brewer.pal(8, "Dark2"), save = T, fontsize = 10){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
   
   data_context <- attr(meth_data, 'context')
   plot_title <- paste0("Beta values of ", data_context, " sites across samples")
   head(meth_data)
   percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage})
   methyl_levels <- list()
-  i = 1
+  
   for (i in 1:length(meth_data)){
     methyl_levels[[i]] <- data.frame(sample.id = meth_data[[i]]@sample.id, 
                                      beta_values = as.numeric(percentage_meth[[i]]),
@@ -336,7 +368,7 @@ plotBetaValuesSummary <- function(meth_data, config, sample_size = 100000, pal =
     ylab("Beta value")
   
   if(save){
-    plotfile <- file.path(config$results_path,'QC_report', paste0('BetaValuesSummary', data_context, '.', config$plot_format))
+    plotfile <- file.path(config$results_path,'QC_report', paste0(meth_tool,'_','BetaValuesSummary', str_replace(data_context,"-",""), '.', config$plot_format))
     ggsave(plotfile, gg)
   }
   
@@ -344,7 +376,9 @@ plotBetaValuesSummary <- function(meth_data, config, sample_size = 100000, pal =
 }
 ####################################################
 ### PLOT: Methylation Levels
-plotMethLevels <- function(meth_data, config, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0.9,1), pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+plotMethLevels <- function(meth_data, config, meth_tool = NA, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0.9,1), pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
   
   percentage_meth <- lapply(meth_data, function(x){x$numCs/x$coverage } )
   methyl_levels <- list()
@@ -380,7 +414,7 @@ plotMethLevels <- function(meth_data, config, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0
     ylab("Frequency")
   
   if(save){
-    plotfile <- file.path(config$results_path,'QC_report',paste0('SummaryMethylationLevel.',config$plot_format))
+    plotfile <- file.path(config$results_path,'QC_report',paste0(meth_tool,"_",'SummaryMethylationLevel.',config$plot_format))
     ggsave(plotfile, gg)
   }
   
@@ -391,7 +425,9 @@ plotMethLevels <- function(meth_data, config, breaks = c(0,0.1,0.2,0.4,0.6,0.8,0
 ###### PLOT: Hyper/Hypo CpG genom & islands annotation for each sample.
 #meth_data <- methData
 #config <- conf
-plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(0.2,0.8), config, pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+plotCpGAnnotation <- function(meth_data, config, meth_tool = NA, hypo_hyper_def = c(0.2,0.8), pal = brewer.pal(8, "Dark2"), share = F, save = T, fontsize = 10){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
   
   cpg.gene <- NULL
   cpg.island <- NULL
@@ -413,12 +449,12 @@ plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(0.2,0.8), config, pa
   
   plotList <- list()
   if(!is.null(cpg.gene)){
-    plotList[[length(plotList)+1]] <- plotCpGGenomAnnotation(meth_data_hyper, cpg.gene, config, pal, subtitle = "Hypermethylated", share, save, fontsize)
-    plotList[[length(plotList)+1]] <- plotCpGGenomAnnotation(meth_data_hypo, cpg.gene, config, pal, subtitle = "Hypomethylated", share, save, fontsize)
+    plotList[[length(plotList)+1]] <- plotCpGGenomAnnotation(meth_data_hyper, config, meth_tool, cpg.gene, pal, subtitle = "Hypermethylated", share, save, fontsize)
+    plotList[[length(plotList)+1]] <- plotCpGGenomAnnotation(meth_data_hypo, config, meth_tool, cpg.gene, pal, subtitle = "Hypomethylated", share, save, fontsize)
   }
   if(!is.null(cpg.island)){
-    plotList[[length(plotList)+1]] <- plotCpGIslandsAnnotation(meth_data_hyper, cpg.island, config, pal, subtitle = "Hypermethylated", share, save, fontsize)
-    plotList[[length(plotList)+1]] <- plotCpGIslandsAnnotation(meth_data_hypo, cpg.island, config, pal, subtitle = "Hypomethylated", share, save, fontsize)
+    plotList[[length(plotList)+1]] <- plotCpGIslandsAnnotation(meth_data_hyper, config, meth_tool, cpg.island, pal, subtitle = "Hypermethylated", share, save, fontsize)
+    plotList[[length(plotList)+1]] <- plotCpGIslandsAnnotation(meth_data_hypo, config, meth_tool, cpg.island, pal, subtitle = "Hypomethylated", share, save, fontsize)
   }
   
   return(plotList)
@@ -426,7 +462,9 @@ plotCpGAnnotation <- function(meth_data, hypo_hyper_def = c(0.2,0.8), config, pa
 
 ####################################################
 ###### PLOT: Hyper/Hypo CpG genom annotation for each sample.
-plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T, fontsize = 10){
+plotCpGGenomAnnotation <- function(meth_data, config, meth_tool = NA, gene_annot_data, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T, fontsize = 10){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
   
   annot_summary <- lapply(meth_data, function(x){ 
     annot <- annotateWithGeneParts(as(x,"GRanges"), gene_annot_data) 
@@ -457,7 +495,7 @@ plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = bre
     ylab("Frequency")
   
   if(save){
-    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("Summary",subtitle,"CpGGenomAnnotation.",config$plot_format)), plot=gg, device=config$plot_format)
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0(meth_tool,"_","Summary",subtitle,"CpGGenomAnnotation.",config$plot_format)), plot=gg, device=config$plot_format)
   }
   
   return(gg)
@@ -465,7 +503,9 @@ plotCpGGenomAnnotation <- function(meth_data, gene_annot_data, config, pal = bre
 
 ####################################################
 ###### PLOT: Hyper/Hypo CpG islands annotation for each sample.
-plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T, fontsize = 10){
+plotCpGIslandsAnnotation <- function(meth_data, config, meth_tool = NA, cpg_annot_data, pal = brewer.pal(8, "Dark2"), subtitle = "", share = F, save = T, fontsize = 10){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
   
   annot_summary <- lapply(meth_data, function(x){ 
     annot <- annotateWithFeatureFlank(as(x,"GRanges"), cpg_annot_data$CpGi, cpg_annot_data$shores, feature.name="CpGi", flank.name="shores")
@@ -496,7 +536,7 @@ plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = br
     ylab("Frequency")
   
   if(save){
-    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("Summary",subtitle,"CpGIslandsAnnotation.",config$plot_format)), plot=gg, device=config$plot_format)
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0(meth_tool,"_","Summary",subtitle,"CpGIslandsAnnotation.",config$plot_format)), plot=gg, device=config$plot_format)
   }
   
   return(gg)
@@ -504,7 +544,9 @@ plotCpGIslandsAnnotation <- function(meth_data, cpg_annot_data, config, pal = br
 
 ###################################################
 ##### Number of Common CpG Shared Between Samples
-plotCntCommonCpG <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), save = T, fontsize = 10){
+plotCntCommonCpG <- function(meth_data, config, meth_tool = NA, pal = brewer.pal(8, "Dark2"), save = T, fontsize = 10){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
   
   commonCpg <- lapply(meth_data, function(x){
     data.frame(cpg = paste0(x$chr, "_", x$start))
@@ -524,7 +566,7 @@ plotCntCommonCpG <- function(meth_data, config, pal = brewer.pal(8, "Dark2"), sa
     ylab("Number of common CpG")
   
   if(save){
-    ggsave(filename=file.path(config$results_path,"QC_report/",paste0("SummaryCntCommonCpG.",config$plot_format)), plot=gg, device=config$plot_format)
+    ggsave(filename=file.path(config$results_path,"QC_report/",paste0(meth_tool,"_","SummaryCntCommonCpG.",config$plot_format)), plot=gg, device=config$plot_format)
   }
   
   return(gg)

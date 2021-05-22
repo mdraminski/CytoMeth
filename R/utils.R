@@ -7,9 +7,12 @@ readConfig <- function(file = "config.yml", tools.file = "./tools/tools.conf.yml
   conf <- yaml::yaml.load_file(file)
   dir.create(file.path(conf$input_path), showWarnings = F)
   dir.create(file.path(conf$results_path), showWarnings = F)
+  dir.create(file.path(conf$results_path, 'tmp'), showWarnings = F)
+  
   conf$input_path <- normalizePath(file.path(conf$input_path))
   conf$results_path <- normalizePath(file.path(conf$results_path))
   conf$ref_data_path <- normalizePath(file.path(conf$ref_data_path))
+  conf$tmp_data_path <- normalizePath(file.path(conf$results_path, 'tmp'))
 
   ### READ TOOLS CONFIG
   conf_tools <- yaml::yaml.load_file(tools.file)
@@ -185,6 +188,7 @@ checkRequiredTools <- function(config){
     file.path(config$tools_path, config$methratio),
     file.path(config$tools_path, config$trimmomatic),
     file.path(config$tools_path, config$picard),
+    file.path(config$tools_path, config$bssnper),
     file.path(config$tools_path, config$gatk))
   
   for(i in 1:length(cytoMethTools)){
@@ -201,10 +205,8 @@ checkRequiredTools <- function(config){
 # checkRequiredFiles
 #########################################
 checkRequiredFiles <- function(config){
-  
   if(!dir.exists(config$ref_data_path)){
-    stop(paste0("Required Reference directory: ",  config$ref_data_path, 
-                " does not exist. (See 'Reference Files' section in CytoMeth manual."))
+    stop(paste0("Required Reference directory: ",  config$ref_data_path, " does not exist. (See 'Reference Files' section in CytoMeth manual."))
   }
   
   cytoMethRefFiles <- c(
@@ -220,11 +222,23 @@ checkRequiredFiles <- function(config){
   
   for(i in 1:length(cytoMethRefFiles)){
     if(!file.exists(cytoMethRefFiles[i])){
-      stop(paste0("Required Reference File: ",  cytoMethRefFiles[i], 
-                  " is not available! Please download Reference Files! (See 'Reference Files' section in CytoMeth manual)."))
+      stop(paste0("Required Reference File: ",  cytoMethRefFiles[i], " is not available! Please download Reference Files! (See 'Reference Files' section in CytoMeth manual)."))
     }
   }
   cat("All required reference files are available. OK.\n")
+  return(T)
+}
+
+#########################################
+# checkIfFileExists
+#########################################
+checkRequiredSettings <- function(config){
+  if(!all(config$meth_tool %in% c("methratio", "bssnper"))){
+    stop(paste0("param 'meth_tool' contains unrecognized values: [",paste0(config$meth_tool[!config$meth_tool %in% c("methratio", "bssnper")], collapse = ", "),"]"))
+  }
+  if(!any(config$meth_tool %in% c("methratio", "bssnper"))){
+    stop(paste0("param 'meth_tool' does not contain required values!"))
+  }
   return(T)
 }
 
@@ -257,7 +271,9 @@ checkFormat <- function(format, supported = c('bed','rds')){
 #########################################
 skipProcess <- function(app_name, process_name, subprocess_name, dir_name){
   dir_name <- gsub("//","/",dir_name)
-  cat(paste0(app_name,": Process ",process_name, " - '",subprocess_name,"' is skipped. Result exists in the directory: ", dir_name, "\n"))
+  if(!endsWith(dir_name,"/"))
+    dir_name <- paste0(dir_name, "/")
+  cat(paste0(app_name,": Process ",process_name, " - '",subprocess_name,"' is skipped. Result already exists in folder: ", dir_name, "\n"))
 }
 
 #########################################
@@ -369,8 +385,7 @@ basename_sample <- function(filename){
 ###############################
 #open.plot.file
 ###############################
-openPlotFile <- function(filename, width = 10, height = 6, res = 72)
-{
+openPlotFile <- function(filename, width = 10, height = 6, res = 72){
   dev.flush()
   ext <- fileExt(filename)
   if (ext == "png") {
@@ -419,6 +434,7 @@ getMethylDataHeader <- function(version = c(1,2), size = 9){
 ###############################
 #readMethResult
 ###############################
+#methyl_result_file = result_files[i]; sample_name = NULL; version = 2;
 readMethResult <- function(methyl_result_file, sample_name = NULL, version = c(1,2)){
   methyl_data <- NULL
   if(checkIfFileExists(methyl_result_file)){
@@ -470,19 +486,22 @@ filterMethResult <- function(methyl_data, ref_sequence_name = NULL, context = c(
 ###############################
 # convertMethResult
 ###############################
-#methyl_data <- methData[[i]]
+#methyl_data <- methData[[i]]; assembly='hg38'; resolution='base';
 convertMethResult <- function(methyl_data, assembly='hg38', resolution='base'){
-  methyl_data <- new("methylRaw", methyl_data %>% dplyr::select(-context, -betaVal) %>% data.table(), 
+  methyl_data <- new("methylRaw", methyl_data %>% dplyr::select(-context, -betaVal, -posCs) %>% data.table(), 
       sample.id=attr(methyl_data, 'sample_name'), assembly=assembly, context=attr(methyl_data, "context"), resolution=resolution)
   return(methyl_data)
 }
 
 ##############################################
 ######## Read data to MethylKit ############
-#conf <- config; context = c("CHG","CHH"); context_label = 'non-CpG'; min_coverage = 10;result_format = c('bed','rds');
-readMethData <- function(config, context = c("CG","CHG","CHH"), context_label = NULL, min_coverage = 10, result_format = c('bed','rds')){
+#conf <- config; meth_tool="methratio"; context = c("CHG","CHH"); context_label = 'non-CpG'; min_coverage = 10; result_format = c('rds');
+readMethData <- function(config, meth_tool = NA, context = c("CG","CHG","CHH"), context_label = NULL, min_coverage = 10, result_format = c('bed','rds')){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
+  
   result_format <- checkFormat(result_format, supported = c('bed','rds'))
-  result_dir <- file.path(config$results_path, "methyl_results")
+  result_dir <- file.path(config$results_path, "methyl_results", meth_tool)
   result_files <- list.files(result_dir, full.names = T)
   result_files <- result_files[endsWith(tolower(result_files), paste0('.methylation_results.', result_format))]
   sample_id <- lapply(strsplit(basename(result_files), '\\.'), function(x){x[1]})
@@ -521,15 +540,20 @@ readMethData <- function(config, context = c("CG","CHG","CHH"), context_label = 
 
 ##############################################
 ######## Read data using MethylKit ############
-#config <- conf
-getCovSummary <- function(config, min_coverage = c(7,8,9,10,11,12,13), result_format = c('bed','rds')){
+#config <- conf; 
+getCovSummary <- function(config, meth_tool = NA, min_coverage = c(7,8,9,10,11,12,13), result_format = c('bed','rds')){
+  if(is.na(meth_tool))
+    meth_tool <- config$meth_tool[1]
   result_format <- checkFormat(result_format, supported = c('bed','rds'))
-  result_dir <- file.path(config$results_path, "methyl_results")
+  result_dir <- file.path(config$results_path, "methyl_results", meth_tool)
   result_files <- list.files(result_dir, full.names = T)
   result_files <- result_files[endsWith(tolower(result_files), paste0('.methylation_results.', result_format))]
   sample_id <- unlist(lapply(strsplit(basename(result_files), '\\.'), function(x){x[1]}))
   covSummaryDF <- list()
   for(i in 1:length(result_files)){
+    if(!file.exists(result_files[i])){
+      warning(paste0("File does not exist! File: ", result_files[i]))
+    }
     cat(paste0('Reading file: ', result_files[i], '\n'))
     methyl_result_data <- readMethResult(result_files[i], version = 2)
     cat(paste0('Calculation Coverages: ', result_files[i], '\n'))
@@ -628,3 +652,63 @@ getBSMAPIndexInterval <- function(mem_size){
 specify_decimal <- function(x, k){
   trimws(format(ifelse(round(x, k)!=0,round(x, k),1/(10^k)), nsmall=k, scientific=F))
 }
+
+##############################
+######## add_file_prefix  ####
+add_file_prefix <- function(file, prefix, prefix_char="_"){
+  new_file <- file.path(dirname(file), paste0(prefix, prefix_char, basename(file)))
+  return(new_file)
+}
+
+##############################
+######## methyl_result_info  ####
+methyl_result_info <- function(methyl_data){
+  print(paste0("Number of numCs > 0: ", length(methyl_data$numCs[methyl_data$numCs > 0])))
+  print(head(methyl_data[methyl_data$numCs > 0,],5))
+  print(paste0("Number of numCs > 1: ", length(methyl_data$numCs[methyl_data$numCs > 1])))
+  print(head(methyl_data[methyl_data$numCs > 1,],5))
+  return()
+}
+
+##############################
+######## wrap_files  ####
+wrap_files <- function(config, out_file, remove_input_files = F, ext = NA, header_lines = 1){
+  if(is.na(ext))
+    ext <- file_ext(basename(out_file))
+  files2wrap <- sort(list.files(dirname(out_file), pattern = paste0("*.",ext), full.names = T))
+  files2wrap <- files2wrap[!files2wrap %in% out_file]
+  if(is.numeric(header_lines)){
+    src_command <- paste0("head -",header_lines," ", files2wrap[1]," > ",out_file,"; ls -v1 ",dirname(out_file),"/","*_",basename(out_file)," | xargs -d '\n' tail -q -n+",(1+header_lines)," >> ",out_file," ;")
+  }else if(is.character(header_lines)){
+    src_command <- paste0('grep "',header_lines,'" ',files2wrap[1],' > ', out_file,';','cat ',paste0(dirname(out_file),"/","*_",basename(out_file)),' | grep -v "',header_lines,'" >> ', out_file, ' ;')
+  }else{
+    stop("Incorrect header_lines parameter!")
+  }
+  runSystemCommand(config$myAppName, 'wrap', ext, src_command, config$verbose)
+  if(remove_input_files)
+    files_removed <- sapply(unique(files2wrap), fileRemoveIfExists)
+  return(T)
+}
+
+############################################################
+######## check positions of C and G in the reference  
+###### TODO: for now just returns the alphabetFrequency object
+# checkLetters <- function(gcdf, fasta_file){
+#   
+#   fasta_file <- FaFile(fasta_file)
+# 
+#   gr1     <- GRanges(gcdf$chr,IRanges(start=gcdf$start+1, end=gcdf$end))
+#   refbase <- getSeq(fasta_file, gr1)
+#   actgs   <- alphabetFrequency( unlist(refbase), baseOnly=TRUE )
+#   
+#   cat(actgs)
+#   cat("\n")
+#   
+# }
+
+##############################
+
+
+
+
+

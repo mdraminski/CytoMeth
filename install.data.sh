@@ -29,6 +29,7 @@ while true; do
                 wget -c -O ./referenceData/CytoMethRefDataNC_001416.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/referenceData/CytoMethRefDataNC_001416.zip;
                 unzip ./referenceData/CytoMethRefDataNC_001416.zip;
                 rm ./referenceData/CytoMethRefDataNC_001416.zip;
+                chmod 775 -R ./referenceData;
                 break;;
         [Nn]* ) echo "Skipping downloading"; break;;
         * ) echo "Please answer yes or no";;
@@ -44,6 +45,7 @@ while true; do
         [Yy]* ) 
                 wget -c -O ./input/small_FAKE03_R1.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth/input/small_FAKE03_R1.fastq;
                 wget -c -O ./input/small_FAKE03_R2.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth/input/small_FAKE03_R2.fastq;
+                chmod 775 -R ./input;
                 break;;
         [Nn]* ) echo "Skipping downloading"; break;;
         * ) echo "Please answer yes or no";;

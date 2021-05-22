@@ -1,5 +1,10 @@
 CytoMeth - Changes
-=============
+## Version 1.0.0
+* added BS-Snper tool that provides methylations and SNP
+* adjusted start/end positions in the output .bed file
+* fixed some minor issues
+* updated documentation
+
 ## Version 0.9.21
 * minor updates
 * updated documentation

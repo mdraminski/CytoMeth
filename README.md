@@ -44,6 +44,22 @@ If you are sure all of the above is working correctly (*R*,  *conda*, *Java*, *p
 ## Hardware requirements
 Hardware requirements highly depend on type and size of the input data. However for human data size of the memory should be at least 4GB reserved for the CytoMeth. Tools that CytoMeth runs also take the advantage of multicore CPU architecture. 
 
+### Recommended OS packages
+Make sure that your Linux OS does not lack any of the following system packages:
+
+```bash
+sudo apt-get update && apt-get install -y --install-recommends 
+locales \
+wget \
+zip \
+unzip \
+curl \
+libcurl4-openssl-dev \
+libssl-dev \
+libssl1.1 \
+libncurses5-dev
+```
+
 ### R and Rscript
 Check if there is R installed on your machine. Type in a terminal window:
 
@@ -54,6 +70,7 @@ Rscript --version
 If you dont have R or Rscript please install them. If missing R:
 ```bash
 sudo apt install r-base
+sudo apt install r-base-dev
 ```
 If still missing Rscript try to install:
 ```bash
@@ -67,12 +84,12 @@ conda info
 ```
 If conda *command not found* please install it. Download anaconda from the web:
 ```bash
-wget https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh
+wget https://repo.anaconda.com/archive/Anaconda3-2020.11-Linux-x86_64.sh
 ```
 Install it in the following directory: '*/opt/anaconda*' and remove the installation file.
 ```bash
-sudo bash Anaconda3-2020.02-Linux-x86_64.sh -b -p /opt/anaconda
-rm Anaconda3-2020.02-Linux-x86_64.sh 
+sudo bash Anaconda3-2020.11-Linux-x86_64.sh -b -p /opt/anaconda
+rm Anaconda3-2020.11-Linux-x86_64.sh 
 ```
 Create new users group 'anaconda' and give all required priviliges to that group.
 ```bash
@@ -100,10 +117,12 @@ Check your python version. It is recommended to use python 2.x with CytoMeth.
 ```bash
 python2 --version
 ```
-If your OS lacks of python 2.x please install it with the following commnads:
+If your OS lacks of python 2.x and pip please install it with the following commnads:
 ```bash
 sudo apt-get update
 sudo apt-get install python2
+sudo curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output get-pip.py
+sudo python2 get-pip.py
 ```
 
 ### Java
@@ -232,8 +251,8 @@ docker build -t cytometh .
 ### Downloading the docker from Docker Hub
 The docker ready to go is also publicly available on Docker Hub and can be pulled to your system by the command below. The second command adds a new docker tag so the name of the local docker image is cytometh instead of inconvenient e.g. mdraminski/cytometh:2.
 ```bash
-docker pull mdraminski/cytometh:2
-docker tag mdraminski/cytometh:2 cytometh
+docker pull mdraminski/cytometh:3
+docker tag mdraminski/cytometh:3 cytometh
 ```
 
 ### Running the docker
@@ -251,6 +270,11 @@ Please remember if you want to share the folder '*Desktop*' between your docker 
 input_path: "/Desktop/input/"
 results_path: "/Desktop/results/"
 ref_data_path: "/Desktop/referenceData/"
+```
+
+In this case please make sure your input folder has full access to all users [777].
+```bash
+chmod -R 777 /Desktop/input/
 ```
 
 ### Quit from the docker
@@ -277,6 +301,7 @@ threads: 8
 memory: 16G
 overwrite_results: FALSE
 clean_tmp_files: TRUE
+remove_clipped_bam: FALSE
 plot_format: "pdf"
 
 #in/out paths
@@ -300,7 +325,11 @@ ref_data_CpGGenomAnnotation: "geneAnnotationEnsemble.hg38.bed"
 trimmomatic_MINLEN: 50
 sqtk_run: FALSE
 sqtk_subset: 10000000
-methratio_batch_processing: TRUE
+min_depth: 1
+#meth_tool: ['methratio', 'bssnper']
+meth_tool: 'methratio'
+### methratio_processing: ["allCHR","batchCHR"]
+methratio_processing: "batchCHR"
 ```
 
 Input parameters:
@@ -310,6 +339,7 @@ Input parameters:
 - memory - amount of memory dedicated to Java and other tools. If you see Java 'out of memory' error or any sudden stop of the program please increase the parameter. The minimum amount that is recommended for human genome analysis is 6GB. Plese use one of the following sufixes: 'M', 'G', 'T' (case sensitive: mega, giga, tera).
 - overwrite_results - if TRUE then all result files from the sample processed again will be overwritten. If FALSE CytoMeth will skip phases that related phase result file exists in apriopriate results_path.
 - clean_tmp_files - if TRUE all useless temporary files will be removed after the processing of the sample.
+- remove_clipped_bam - whether to remove final clipped.bam file or not
 - plot_format - set up plot format of report files. Available formats: 'pdf','png', 'eps', 'tiff', 'jpg'.
 - input_path - defines path to input fastq R1/R2 files, all samples existing in this directory will be processed in batch process.
 - results_path - the path to keep all temporary and result files.
@@ -321,7 +351,9 @@ Input parameters:
 - trimmomatic_MINLEN - MINLEN parameter of the trimmomatic tool.
 - sqtk_run - if TRUE initial sqtk sampling is processed.
 - sqtk_subset - size of the subset to select by the sqtk tool.
-- methratio_batch_processing - determines if methratio process should be run gene by gene (better for big input samples) or all genes at once (faster for small input data samples). It is TRUE by default.
+- min_depth - the minimum coverage to call variants/methylomes
+- meth_tool - defines the tool for final calculation of beta values (Methratio or BS-Snper). BS-Snper tool also provides SNPs in additional vcf file. Notice that it is possible to run both tools to obtain results from both eg. meth_tool: ['methratio', 'bssnper'].
+- methratio_processing - determines if methratio process should be run gene by gene (better for big input samples) or all genes at once (faster for small input data samples). It is set on 'batchCHR' by default.
 
 ### File 'tools.conf.yml'
 The file '*tools.conf.yml*' contains CytoMeth tools parameters and it is located in tools directory. The settings in the file configure paths and names of all tools needed by CytoMeth processing default values are highly recommended. The file by default is defined as below:
@@ -345,6 +377,7 @@ gatk: "GATK/GenomeAnalysisTK.jar"
 fastqc: "fastqc"
 seqtk: "seqtk"
 bisSNP:
+bssnper: "BS-Snper/BS-Snper.pl"
 
 ### python2 path
 python2: "python2"
@@ -402,6 +435,8 @@ CytoMeth(conf, file.path(conf$input_path,"small_FAKE03_R1.fastq"),
 ## Output files
 
 ### Methylation beta values
+
+#### Methratio results:
 The result files are located in *'/results/methyl_results'* directory - for each input sample there are two types of output files:
 
 - 'SAMPLENAME.methylation_results.bed' - text file in bed format
@@ -417,6 +452,17 @@ The example output file is presented below:
 104 chr1 135086 135087      CG   0.947      +       19    18    19 135086
 105 chr1 135091 135092     CHH   0.000      -       20     0    20 135092
 ```
+
+#### BS-Snper results:
+
+The result files are located in *'/results/bssnper'* directory - for each input sample there are three types of output files:
+
+- 'SAMPLENAME.bssnper.vcf' - the standard VCF file
+- 'SAMPLENAME.methylation_results.bed' - text file in bed format
+- 'SAMPLENAME.methylation_results.rds' - binary file easy to read in R by *readRDS* function
+
+The 'SAMPLENAME.methylation_results.bed' file is formatted the same way like Methratio file
+
 
 ### FastQC report files
 The result files are located in *'/results/QC/FastQC'* directory. For each sample there are four output files:
@@ -445,7 +491,7 @@ Number_of_on_target_reads: 533906.0
 Prc_of_on_target_reads: 100.0170471
 Mean_coverage: 0.41
 Number_of_Cs_in_control: 0
-Conversion_eff: .nan
+Conversion_eff: NaN
 Number_of_Cs_in_panel: 295448
 Number_of_Cs_in_panel_CpG: 42450
 Number_of_Cs_in_panel_non_CpG: 252998
@@ -454,7 +500,10 @@ Number_of_Cs_in_panel_CpG_cov_min10: 33856
 Number_of_Cs_in_panel_CpG_cov_max9: 8594
 Prc_of_Cs_in_panel_CpG_cov_min10: 79.7550059
 Prc_of_Cs_in_panel_CpG_cov_max9: 20.2449941
+processing_time: 3.3 hours
 ```
+
+Notice that in the result file you may find separate conversion stats from both tools (Methratio and BS-Snper) if parameter 'meth_tool' was set respectively.
 
 ### CytoMeth Quality Control summary file
 The file '*results/QC_report/SummaryQC.csv*' contains all QC report files results for all samples.
@@ -477,8 +526,8 @@ The directory '*results/QC_report/*' contains set of plot files:
 # Version
 For more information please see CHANGES.md
 
-- Version: 0.9.16
-- Date: 17.01.2020
+- Version: 1.0.0
+- Date: 20.05.2021
 
 # Authors
 This tool has been created and implemented by:
@@ -487,6 +536,7 @@ This tool has been created and implemented by:
 - Agata Dziedzic [1] (author, developer)
 - Rafal Guzik [3] (author)
 - Bartosz Wojtas [2] (author)
+- Damian Loska [1] (developer)
 - Michal J. Dabrowski [1] (author)
 
 1. Computational Biology Lab, Polish Academy of Science, Warsaw, Poland
@@ -505,8 +555,9 @@ The set of tools, used by or provided with CytoMeth is under following licenses:
 - bamtools - The MIT License https://github.com/pezmaster31/bamtools/blob/master/LICENSE
 - bamUtil - GNU General Public License https://github.com/statgen/bamUtil/blob/master/src/Validate.h
 - GATK - BSD 3-Clause "New" or "Revised" License https://github.com/broadinstitute/gatk/blob/master/LICENSE.TXT
-- BisSNP GNU General Public License https://github.com/dnaase/Bis-tools/blob/master/Bis-SNP/src/main/java/edu/usc/epigenome/uecgatk/bissnp/BisSNP.java
+- BisSNP - GNU General Public License https://github.com/dnaase/Bis-tools/blob/master/Bis-SNP/src/main/java/edu/usc/epigenome/uecgatk/bissnp/BisSNP.java
 - samtools - The MIT/Expat License https://github.com/samtools/htslib-plugins/blob/master/LICENSE
+- BS-Snper - https://github.com/hellbelly/BS-Snper
 
 # Acknowledgments
 
