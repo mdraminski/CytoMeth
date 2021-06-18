@@ -8,7 +8,7 @@ output:
 <!--- 
 CytoMeth is a tool that processes methylation data designed to deal with paired-end data sequencing from Illumina. 
 -->
-CytoMeth tool compiles a set of open source software named in the Roche pipeline guidelines to perform SeqCap Epi data analysis. The pipe includes read quality assessment, read filtering, mapping to a reference genome, removal of PCR duplicates, assessment of coverage statistics, analyse methylation and variant calling and filtering as well as some additional functionalities added to improve the process and facilitate obtaining the processed results. Here, to obtain methylomes for brain tumor samples we used SeqCap Epi CpGiant Methylation panel and performed bisulphite conversion followed by Illumina NGS sequencing and CytoMeth tool analysis.
+CytoMeth - easy to use tool compiles a set of open source software named originally in the Roche pipeline guidelines to automatically perform full SeqCap Epi data analysis. The pipe includes: reads quality assessment, reads filtering, mapping to a reference genome, removal of PCR duplicates, assessment of coverage statistics, analyse methylation and variant calling and filtering as well as some additional functionalities added to improve the process and facilitate obtaining the processed results. Moreover unlike the original pipeline the current version implements a secondary mapper (BS-Snper) that additionally performs SNP calling process. In the fully prepared environment a user needs to provide sequencing reads in the form of two FASTQ files and set up configuration parameters by editing the default ‘config.yml’ file.
 
 ## Table of contents
 * [Installation](#installation)
@@ -21,15 +21,15 @@ CytoMeth tool compiles a set of open source software named in the Roche pipeline
 * [Acknowledgments](#acknowledgments)
 
 # Installation
-CytoMeth is implemented as a set of R scripts that run various tools in a specific sequence with specific set of parameters. It can be installed (and used) in two ways:
+CytoMeth tool is implemented as a set of R scripts that run various tools in a specific sequence with specific set of parameters. It can be installed (and used) in two ways:
 
-- as a set of scripts and third party required tools installed directly in your Linux OS
+- as a set of scripts and third party required tools installed directly in Linux OS
 - as a docker image that can be run under any OS
 
 If you prefer the docker installation please skip the section below and go to the section [The Docker]. If you prefer to install it directly on your Linux environment please go through all below steps.
 
 ## Environment Preparation
-Notice that below steps refer to Linux OS. However more experienced user can also use this manual to install CytoMeth on OSX but it requires some slight adaptations that are not provided in the description.
+Notice that below steps refer to Linux OS. However more experienced user can also use this manual to install CytoMeth on OSX or other Unix OS but it requires some slight adaptations that are not provided in the description below.
 
 To complete the installation process CytoMeth requires the following components installed on your OS:
 
@@ -38,6 +38,7 @@ To complete the installation process CytoMeth requires the following components 
 - Python 2.x
 - Java 8 (1.8) or above
 - wget tool
+- git
 
 If you are sure all of the above is working correctly (*R*,  *conda*, *Java*, *python 2.x*) on your system you can skip the next section and go to the section [Installation of CytoMeth Components].
 
@@ -51,6 +52,7 @@ Make sure that your Linux OS does not lack any of the following system packages:
 sudo apt-get update && apt-get install -y --install-recommends 
 locales \
 wget \
+git \
 zip \
 unzip \
 curl \
@@ -67,7 +69,7 @@ Check if there is R installed on your machine. Type in a terminal window:
 R --version
 Rscript --version
 ```
-If you dont have R or Rscript please install them. If missing R:
+If you don't have R or Rscript please install them. If missing R:
 ```bash
 sudo apt install r-base
 sudo apt install r-base-dev
@@ -91,7 +93,7 @@ Install it in the following directory: '*/opt/anaconda*' and remove the installa
 sudo bash Anaconda3-2020.11-Linux-x86_64.sh -b -p /opt/anaconda
 rm Anaconda3-2020.11-Linux-x86_64.sh 
 ```
-Create new users group 'anaconda' and give all required priviliges to that group.
+Create new users group 'anaconda' and give all required privileges to that group.
 ```bash
 sudo groupadd anaconda 
 sudo chgrp -R anaconda /opt/anaconda
@@ -166,13 +168,13 @@ The script '*install.sh*' file should install the following *R* packages:
 - GenomicRanges (Bioconductor package)
 - genomation (Bioconductor package)
 
-These packages can be also manually installed by typing the command in a terminal window:
+These packages can be also installed by typing the command in a terminal window:
 ```bash
 Rscript R/install.packages.R
 ```
 
 #### Required conda packages
-The follwing *conda* packages are required by CytoMeth and these packages are automatically installed or updated by '*./install.sh*' command. The current version of CytoMeth was succesfully tested on versions presented below: 
+The follwing *conda* packages are required by CytoMeth and these packages are automatically installed or updated by '*./install.sh*' command. The current version of CytoMeth was successfully tested on versions presented below: 
 
 - bsmap (ver. 2.90)
 - bamtools (ver. 2.5.1)
@@ -182,7 +184,7 @@ The follwing *conda* packages are required by CytoMeth and these packages are au
 - fastqc (ver. 0.11.8)
 - samtools (ver. 1.9)
 
-These tools can be also manually installed by typing the command in the a terminal window:
+These tools can be also installed by typing the command in the a terminal window:
 ```bash
 conda update conda
 conda update conda-build
@@ -210,13 +212,13 @@ conda info --json > conda.info
 This file is also automatically created during installation process.
 
 ### Reference Files
-Reference files required by CytoMeth are automatically installed by '*install.data.sh*' script. This data contains human reference genome (hg38), SeqCap_EPI_CpGiant_hg38 Roche methylome panel, Ensemble gene annotation data and CpG Island coordinates data. If you would like to download them manually plese run the following commands in a terminal window:
+Reference files required by CytoMeth are automatically installed by '*install.data.sh*' script. This data contains human reference genome (hg38), SeqCap_EPI_CpGiant_hg38 Roche methylome panel, Ensemble gene annotation data and CpG Island coordinates data. If you would like to download them manually please run the following commands in a terminal window:
 
 ```bash
 wget -c -O ./referenceData/CytoMethRefData.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/referenceData/CytoMethRefData.zip;
 unzip ./referenceData/CytoMethRefData.zip;
 ```
-Set of optional reference files that is also available to download contains contains human reference genome (hg38) inclding additional reference genome NC_001416 phage widely used for conversion efficiency evaluation. 
+Set of optional reference files that is also available to download contains contains human reference genome (hg38) including additional reference genome NC_001416 phage widely used for conversion efficiency evaluation. 
 ```bash
 wget -c -O ./referenceData/CytoMethRefDataNC_001416.zip http://zbo.ipipan.waw.pl/tools/CytoMeth/referenceData/CytoMethRefDataNC_001416.zip;
 unzip ./referenceData/CytoMethRefDataNC_001416.zip;
@@ -232,10 +234,10 @@ wget -c -O ./input/small_FAKE03_R2.fastq http://zbo.ipipan.waw.pl/tools/CytoMeth
 ```
 
 ## The Docker
-CytoMeth project is also available as a docker. The CytoMeth docker is a virtual machine that contains all the environment (apps and libraries) ready to run CytoMeth. To download and run CytoMeth docker please install Docker app from https://www.docker.com/. After successfull instalation of Docker app you may build your own CytoMeth docker from the sources or download ready to use CytoMeth docker from  Docker Hub [Downloading the docker from Docker Hub]. 
+CytoMeth project is also available as a docker. The CytoMeth docker is a virtual machine that contains all the environment (apps and libraries) ready to run CytoMeth. To download and run CytoMeth docker please install Docker app from https://www.docker.com/. After successful installation of Docker app you may build your own CytoMeth docker from the sources or download ready to use CytoMeth docker from  Docker Hub [Downloading the docker from Docker Hub]. 
 
 ### Building your own docker locally
-To build your own docker use *build* command and after the successful creation the docker is ready to run. Pleaese notice building of the docker may take tens of minutes because the proper environment must be created from the scratch, however it must be done only once.
+To build your own docker use *build* command and after the successful creation the docker is ready to run. Please notice building of the docker may take tens of minutes because the proper environment must be created from the scratch, however it must be done only once.
 
 To get CytoMeth from the github repository you may download it as a zip file or clone the project:
 ```bash
@@ -260,7 +262,7 @@ To run the docker that is already built in your system or pulled from Docker Hub
 ```bash
 docker run -it cytometh /bin/bash
 ```
-Notice all data that you download or create (e.g. results) within the docker session is available until its shut down. Therefore it is highly recomennded to share the folder between the docker and the host system (for data and results transfer). To run the docker that shares the folder between host system and the docker it is needed to specify it right after '-v' parameter e.g. to share Desktop folder in your home folder run the command below: 
+Notice all data that you download or create (e.g. results) within the docker session is available until its shut down. Therefore it is highly recommended to share the folder between the docker and the host system (for data and results transfer). To run the docker that shares the folder between host system and the docker it is needed to specify it right after '-v' parameter e.g. to share Desktop folder in your home folder run the command below: 
 ```bash
 docker run -it -v ~/Desktop:/Desktop cytometh /bin/bash
 ```
@@ -278,7 +280,7 @@ chmod -R 777 /Desktop/input/
 ```
 
 ### Quit from the docker
-To shut down the virtual machine type command 'exit'. It is similar as quiting from ssh session.
+To shut down the virtual machine type command 'exit'. It is similar as an exit from the ssh session.
 
 ### Reference data
 Reference data is several Gigabytes big therefore it is not included in the parent docker. However after successful running of the docker on your machine you can download the data by running '*install.data.sh*' script in the CytoMeth main directory. 
@@ -334,26 +336,26 @@ methratio_processing: "batchCHR"
 
 Input parameters:
 
-- verbose - prints additional info and commands on the screen
-- threads - defines number of threads used by tools. Most of the tools does not gain any processing speed for more than 10-12  threads.
-- memory - amount of memory dedicated to Java and other tools. If you see Java 'out of memory' error or any sudden stop of the program please increase the parameter. The minimum amount that is recommended for human genome analysis is 6GB. Plese use one of the following sufixes: 'M', 'G', 'T' (case sensitive: mega, giga, tera).
-- overwrite_results - if TRUE then all result files from the sample processed again will be overwritten. If FALSE CytoMeth will skip phases that related phase result file exists in apriopriate results_path.
+- verbose - prints additional info and commands on the screen.
+- threads - defines the number of threads used by tools. Most of the tools does not gain any processing speed for more than 10-12  threads.
+- memory - amount of memory dedicated to Java and other tools. If you see Java 'out of memory' error or any sudden stop of the program please increase the parameter. The minimum amount that is recommended for human genome analysis is 6GB. Please use one of the following sufixes: 'M', 'G', 'T' (case sensitive: mega, giga, tera).
+- overwrite_results - if TRUE then all result files from the sample processed again will be overwritten. If FALSE CytoMeth will skip phases that related phase result file exists in appropriate results_path.
 - clean_tmp_files - if TRUE all useless temporary files will be removed after the processing of the sample.
-- remove_clipped_bam - whether to remove final clipped.bam file or not
+- remove_clipped_bam - whether to remove final clipped.bam file or not.
 - plot_format - set up plot format of report files. Available formats: 'pdf','png', 'eps', 'tiff', 'jpg'.
-- input_path - defines path to input fastq R1/R2 files, all samples existing in this directory will be processed in batch process.
+- input_path - defines path to input fastq R1/R2 files, all samples existing in this directory will be processed in a batch process.
 - results_path - the path to keep all temporary and result files.
-- anaconda_bin_path - path to conda and conda packages. This parameter is retrieved from 'conda.info' file and it is commented out by default. If you want to specify specific path to conda/bin directory uncommend it and define. This parameter overwrites the setting from 'conda.info' file.
-- ref_data_path - defines path to the reference data
-- ref_data_sequence_file - additional control sequence file (see Input files section) by default it is set on 'hg38_phage.fa'.
-- ref_data_intervals_file - panel file (see Input files section)  by default it is set on SeqCap_EPI_CpGiant_hg38_custom_liftOver_phage.bed'
-- ref_control_sequence_name - name of control sequence (by default phage sequence)
+- anaconda_bin_path - path to conda and conda packages. This parameter is retrieved from the 'conda.info' file and it is not used here by default. If you want to specify a given path to the conda/bin directory uncomment it and define. This parameter overrides the setting from the 'conda.info' file.
+- ref_data_path - defines path to the reference data.
+- ref_data_sequence_file - additional control sequence file (see Input files section) by default it is set on 'hg38_NC_001416.fa'.
+- ref_data_intervals_file - panel file (see Input files section)  by default it is set on SeqCap_EPI_CpGiant_hg38_custom_liftOver_NC_001416.bed'.
+- ref_control_sequence_name - name of control sequence (by default phage sequence name NC_001416).
 - trimmomatic_MINLEN - MINLEN parameter of the trimmomatic tool.
 - sqtk_run - if TRUE initial sqtk sampling is processed.
 - sqtk_subset - size of the subset to select by the sqtk tool.
 - min_depth - the minimum coverage to call variants/methylomes
-- meth_tool - defines the tool for final calculation of beta values (Methratio or BS-Snper). BS-Snper tool also provides SNPs in additional vcf file. Notice that it is possible to run both tools to obtain results from both eg. meth_tool: ['methratio', 'bssnper'].
-- methratio_processing - determines if methratio process should be run gene by gene (better for big input samples) or all genes at once (faster for small input data samples). It is set on 'batchCHR' by default.
+- meth_tool - defines the tool for final calculation of beta values (Methratio or BS-Snper). BS-Snper tool also provides an additional vcf file with SNPs. It is possible to run both tools to obtain both results eg. meth_tool: ['methratio', 'bssnper'].
+- meth_processing - determines if reads mapper defined above should be run gene by gene sequentially (better for big input samples) or all genes at once (faster for small input data samples). This parameter is set on 'batchCHR' by default.
 
 ### File 'tools.conf.yml'
 The file '*tools.conf.yml*' contains CytoMeth tools parameters and it is located in tools directory. The settings in the file configure paths and names of all tools needed by CytoMeth processing default values are highly recommended. The file by default is defined as below:
@@ -393,7 +395,7 @@ Before you run the processing you need to:
   gunzip -c SAMPLENAME_R1.fastq.gz > SAMPLENAME_R1.fastq
   gunzip -c SAMPLENAME_R2.fastq.gz > SAMPLENAME_R2.fastq
   ```
-- Prepare reference FASTA (in .fa or .fasta format) file with additional control sequence. CytoMeth comes with 'hg38_phage.fa' reference file with an additional sequence used as control (phage DNA sequence) and the file 'hg38.fa' without that additional seqence. Any new reference '.fa' file requires corresponding '.fai' and '.dict' files that should be generated. The control is used to estimate bisulfite conversion efficiency. Remember to add the sequence of your control e.g. enterobacteria phage lambda genome to the reference genome file so that captured controls can be mapped to the lambda genome. Reassuming, the reference genome file must be extended with a control sequence. Notice that all reference files are located in */referenceData/* directory.
+- Prepare reference FASTA (in .fa or .fasta format) file with additional control sequence. CytoMeth comes with 'hg38_phage.fa' reference file with an additional sequence used as control (phage DNA sequence) and the file 'hg38.fa' without that additional sequence. Any new reference '.fa' file requires corresponding '.fai' and '.dict' files that should be generated. The control is used to estimate bisulfite conversion efficiency. Remember to add the sequence of your control e.g. enterobacteria phage lambda genome to the reference genome file so that captured controls can be mapped to the lambda genome. Reassuming, the reference genome file must be extended with a control sequence. Notice that all reference files are located in */referenceData/* directory.
 - Prepare panel file (in .bed format) with panel coordinates and control coordinates '*SeqCap\_EPI\_CpGiant\_hg38\_custom\_liftOver\_phage.bed*'. If you used different panel or performed whole genome analysis, please prepare the '.bed' file defining genomic regions covered by your design, to compute not biased statistics. **Important**: Check if your panel file (bed format) control sequence coordinates has the same name (header ID) as in reference fasta file.
 
 ## Running the CytoMeth Processing
@@ -412,10 +414,10 @@ When above processing is finished create summary quality report on all results f
 ```bash
 Rscript R/CytoMethQC.R
 ```
-The script above creates summary csv file that aggregates quality measures values for all processed samples. It also creates two barplots: overall coverage report plot, CpG vs nonCpG frequency report. The methylation results can be also visualised in respect to specific genomic regions.
+The script above creates summary csv file that aggregates quality measures values for all processed samples. It also creates two bar plots: overall coverage report plot, CpG vs nonCpG frequency report. The methylation results can be also visualized in respect to specific genomic regions.
 We annotate the level of methylation to CpG islands, promoters, intergenic regions, introns and exons and provide proper plots in '*results/QC_report*' directory.
 
-It is also possible to define your own processing chain and run multiple experiments on different input and output folders or different set of input parameters. To set up the CytoMeth process manually plese edit '*CytoMeth.R*' file.
+It is also possible to define your own processing chain and run multiple experiments on different input and output folders or different set of input parameters. To set up the CytoMeth process manually please edit '*CytoMeth.R*' file.
 ```R
 source("./R/main.R")
 #read default config from the config.yml file
@@ -524,7 +526,7 @@ The directory '*results/QC_report/*' contains set of plot files:
 - 'SummarySitesCovBy10.pdf'
 
 # Version
-For more information please see CHANGES.md
+For more information please see the file: CHANGES.md
 
 - Version: 1.0.0
 - Date: 20.05.2021
@@ -532,16 +534,16 @@ For more information please see CHANGES.md
 # Authors
 This tool has been created and implemented by:
 
-- Michal Draminski [1] (author, developer, maintainer)
+- Michał Dramiński [1] (author, developer, maintainer)
 - Agata Dziedzic [1] (author, developer)
-- Rafal Guzik [3] (author)
-- Bartosz Wojtas [2] (author)
+- Rafał Guzik [3] (author)
+- Bartosz Wojtaś [2] (author)
 - Damian Loska [1] (developer)
-- Michal J. Dabrowski [1] (author)
+- Michał J. Dąbrowski [1] (author)
 
 1. Computational Biology Lab, Polish Academy of Science, Warsaw, Poland
 2. Neurobiology Center, Nencki Institute of Experimental Biology, Warsaw, Poland
-3. Andrzej Frycz Modrzewski Krakow University, Faculty of Medicine and Health Sciences, Department of Biochemistry, Poland.
+3. Andrzej Frycz Modrzewski Kraków University, Faculty of Medicine and Health Sciences, Department of Biochemistry, Poland.
 
 # License
 This program and the accompanying materials are made available under the terms of the GNU Public License v3.0 which accompanies this distribution, and is available at [http://www.gnu.org/licenses/gpl.html](http://www.gnu.org/licenses/gpl.html). For more information please see LICENSE file.
