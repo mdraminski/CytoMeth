@@ -338,7 +338,7 @@ Input parameters:
 
 - verbose - prints additional info and commands on the screen.
 - threads - defines the number of threads used by tools. Most of the tools does not gain any processing speed for more than 10-12  threads.
-- memory - amount of memory dedicated to Java and other tools. If you see Java 'out of memory' error or any sudden stop of the program please increase the parameter. The minimum amount that is recommended for human genome analysis is 6GB. Please use one of the following sufixes: 'M', 'G', 'T' (case sensitive: mega, giga, tera).
+- memory - amount of memory dedicated to Java and other tools. If you see Java 'out of memory' error or any sudden stop of the program please increase the parameter. The minimum amount that is recommended for human genome analysis is 6GB. Please use one of the following suffixes: 'M', 'G', 'T' (case sensitive: mega, giga, tera).
 - overwrite_results - if TRUE then all result files from the sample processed again will be overwritten. If FALSE CytoMeth will skip phases that related phase result file exists in appropriate results_path.
 - clean_tmp_files - if TRUE all useless temporary files will be removed after the processing of the sample.
 - remove_clipped_bam - whether to remove final clipped.bam file or not.
@@ -389,14 +389,14 @@ python2: "python2"
 
 Before you run the processing you need to: 
 
-- Copy your nucleotide sequences FASTA R1/R2 files (both in *.fastq* format) named: 'SAMPLENAME\_R1.fastq' and 'SAMPLENAME\_R2.fastq' (where 'SAMPLENAME' is a unique name of your sequenced sample) to the '*./input/*' directory.
+- Copy your nucleotide sequences FASTA R1/R2 files (both in *.fastq* format) named: 'SAMPLENAME\_R1.fastq' and 'SAMPLENAME\_R2.fastq' (where 'SAMPLENAME' is a unique name of your sequenced sample) to the '*./input/*' directory. Notice that the suffixes '_R1' and '_R2' are required.
 - If your files are compressed (*.gz* format) please decompress before use:
   ```bash
   gunzip -c SAMPLENAME_R1.fastq.gz > SAMPLENAME_R1.fastq
   gunzip -c SAMPLENAME_R2.fastq.gz > SAMPLENAME_R2.fastq
   ```
-- Prepare reference FASTA (in .fa or .fasta format) file with additional control sequence. CytoMeth comes with 'hg38_phage.fa' reference file with an additional sequence used as control (phage DNA sequence) and the file 'hg38.fa' without that additional sequence. Any new reference '.fa' file requires corresponding '.fai' and '.dict' files that should be generated. The control is used to estimate bisulfite conversion efficiency. Remember to add the sequence of your control e.g. enterobacteria phage lambda genome to the reference genome file so that captured controls can be mapped to the lambda genome. Reassuming, the reference genome file must be extended with a control sequence. Notice that all reference files are located in */referenceData/* directory.
-- Prepare panel file (in .bed format) with panel coordinates and control coordinates '*SeqCap\_EPI\_CpGiant\_hg38\_custom\_liftOver\_phage.bed*'. If you used different panel or performed whole genome analysis, please prepare the '.bed' file defining genomic regions covered by your design, to compute not biased statistics. **Important**: Check if your panel file (bed format) control sequence coordinates has the same name (header ID) as in reference fasta file.
+- Prepare reference FASTA (in .fa or .fasta format) file with additional control sequence. CytoMeth comes with 'hg38_phage.fa' reference file with an additional sequence used as control (popular NC_001416 phage DNA sequence) and the file 'hg38.fa' without that additional sequence. Any new reference '.fa' file requires corresponding '.fai' and '.dict' files that should be generated. The control is used to estimate bisulfite conversion efficiency. Remember to add the sequence of your control e.g. enterobacteria phage lambda genome to the reference genome file so that captured controls can be mapped to the lambda genome. Reassuming, the reference genome file must be extended with a control sequence. Notice that all reference files are located in */referenceData/* directory.
+- Prepare panel file (in .bed format) with panel coordinates and control coordinates. CytoMeth by default uses '*SeqCap\_EPI\_CpGiant\_hg38\_custom\_liftOver.bed*' file and its phage version respectively. If you used a different panel or performed whole genome analysis, please prepare the '.bed' file defining genomic regions covered by your design, to compute not biased statistics. In the case of whole genome analysis, the parameter *ref_data_intervals_file* has to define an empty string (eg *ref_data_intervals_file*:""). **Important**: Check if your panel file (bed format) control sequence coordinates has the same name (header ID) as in reference fasta file.
 
 ## Running the CytoMeth Processing
 
@@ -414,8 +414,8 @@ When above processing is finished create summary quality report on all results f
 ```bash
 Rscript R/CytoMethQC.R
 ```
-The script above creates summary csv file that aggregates quality measures values for all processed samples. It also creates two bar plots: overall coverage report plot, CpG vs nonCpG frequency report. The methylation results can be also visualized in respect to specific genomic regions.
-We annotate the level of methylation to CpG islands, promoters, intergenic regions, introns and exons and provide proper plots in '*results/QC_report*' directory.
+The script above creates a summary csv file that aggregates quality measures values for all processed samples. It also creates two bar plots: overall coverage report plot, CpG vs nonCpG frequency report. The methylation results can be also visualized in respect to specific genomic regions.
+CytoMeth annotates the level of methylation to CpG islands, promoters, intergenic regions, introns and exons and provides corresponding plots in '*results/QC_report*' directory.
 
 It is also possible to define your own processing chain and run multiple experiments on different input and output folders or different set of input parameters. To set up the CytoMeth process manually please edit '*CytoMeth.R*' file.
 ```R
@@ -471,7 +471,7 @@ The result files are located in *'/results/QC/FastQC'* directory. For each sampl
 
 - 'SAMPLENAME_R1_fastqc.zip'
 - 'SAMPLENAME_R2_fastqc.zip'
-- 'SAMPLENAME_R2_fastqc.html'
+- 'SAMPLENAME_R1_fastqc.html'
 - 'SAMPLENAME_R2_fastqc.html'
 
 There is no need to unzip these files, FastQC report is available by opening html file in the browser.
