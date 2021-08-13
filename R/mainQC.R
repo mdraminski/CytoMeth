@@ -117,13 +117,19 @@ getSampleQCSummary <- function(sample_basename, config, result_format = c('bed',
 ###### get_conversion_efficiency  ####
 get_conversion_efficiency <- function(methyl_data, config){
   qc <- list()
-  control <- methyl_data[methyl_data$chr == config$ref_control_sequence_name,]
-  qc$Number_of_Cs_in_control <- nrow(control)
-  conversion_eff <- c(100 * (1-sum(control$numCs)/sum(control$numTs)))
-  qc$Conversion_eff <- conversion_eff
+  #go over all control names defined in config$ref_control_sequence_name
+  for(i in 1:length(config$ref_control_sequence_name)){
+    control_name <- config$ref_control_sequence_name[i]
+    control <- methyl_data[methyl_data$chr %in% control_name,]
+    conversion_eff <- c(100 * (1-sum(control$numCs)/sum(control$numTs)))
+    qc[paste0('Number_of_Cs_in_control_',control_name)] <- nrow(control)
+    qc[paste0('Conversion_eff_',control_name)] <- conversion_eff
+    #qc$Number_of_Cs_in_control <- nrow(control)
+    #qc$Conversion_eff <- conversion_eff
+  }
   
   #Add to QC Sample report
-  methyl_res_panel_df_no_control <- methyl_data[methyl_data$chr != config$ref_control_sequence_name,]
+  methyl_res_panel_df_no_control <- methyl_data[!methyl_data$chr %in% config$ref_control_sequence_name,]
   qc$Number_of_Cs_in_panel <- nrow(methyl_res_panel_df_no_control)
   
   methyl_res_panel_df_no_control_CpG <- methyl_res_panel_df_no_control[methyl_res_panel_df_no_control$context %in% c('CG'),]

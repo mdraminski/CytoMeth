@@ -1,4 +1,10 @@
 CytoMeth - Changes
+## Version 1.0.2
+* samtools is used for sorting (multithreaded)
+
+## Version 1.0.1
+* more than one control is now available
+
 ## Version 1.0.0
 * added BS-Snper tool that provides methylations and SNP
 * adjusted start/end positions in the output .bed file

@@ -467,7 +467,7 @@ readMethResult <- function(methyl_result_file, sample_name = NULL, version = c(1
 filterMethResult <- function(methyl_data, ref_sequence_name = NULL, context = c("CG","CHG","CHH"), context_label = NULL, min_coverage = 10, max_coverage = NA){
   methyl_data <- as.data.frame(methyl_data)
   if(!is.null(ref_sequence_name)){
-    methyl_data <- methyl_data[methyl_data$chr != ref_sequence_name,]
+    methyl_data <- methyl_data[!methyl_data$chr %in% ref_sequence_name,]
   }
   if(is.na(max_coverage))
     methyl_data <- methyl_data[methyl_data$context %in% context & methyl_data$coverage >= min_coverage,]

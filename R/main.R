@@ -19,9 +19,9 @@ source("./R/mainQC.R")
 
 #########################################
 CytoMethInfo <- function(){
-  cat("#########################################\n")
-  cat("### CytoMeth ver 1.0.0 (Apr 08 2021) ###\n")
-  cat("#########################################\n")
+  cat("############################################\n")
+  cat("### CytoMeth ver 1.0.2 (August 5th 2021) ###\n")
+  cat("############################################\n")
   cat("### Created by Michal Draminski, Agata Dziedzic, Rafal Guzik, Damian Loska, Bartosz Wojtas and Michal J. Dabrowski ###\n")
   cat("### Computational Biology Lab, Polish Academy of Science, Warsaw, Poland ###\n")
   cat("### Neurobiology Center, Nencki Institute of Experimental Biology, Warsaw, Poland ###\n\n")

@@ -94,7 +94,7 @@ run_BSMAP <- function(config, config_tools){
   mapping_dir <- dirname(mapping_result_file)
   
   if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".sam")))) {
-    src_command <- paste0(file.path(config$anaconda_bin_path,config$bsmap), " -r 0 -s 16 -n 1 ",
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$bsmap), " -r 0 -s 16 -n 1 ",
                           getBSMAPIndexInterval(config$memory),
                           " -a ", trimming_result_r1_file,"_trimmed.fq",
                           " -b ", trimming_result_r2_file,"_trimmed.fq",
@@ -175,27 +175,40 @@ run_RemoveDuplicates <- function(config, config_tools){
   
   ######  bamtools - sort top
   if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".top.bam.sorted")))) {
-    src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " sort",
-                          " -in ", paste0(mapping_result_file,".top.bam"), 
-                          " -out ", paste0(mapping_result_file,".top.bam.sorted"))
-    runSystemCommand(config$myAppName, 'Bamtools', 'sort top', src_command, config$verbose)
+    #bamtools deprecated    
+    #src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " sort ",
+    #                      " -in ", paste0(mapping_result_file,".top.bam"), 
+    #                      " -out ", paste0(mapping_result_file,".top.bam.sorted"))
+    #samtools multithreaded
+    src_command <- paste0(file.path(config$anaconda_bin_path,config$samtools), " sort",
+                          " -@ ", config$threads, " -m 4G",
+                          " -o ", paste0(mapping_result_file,".top.bam.sorted"),
+                          " ", paste0(mapping_result_file,".top.bam"))
+    runSystemCommand(config$myAppName, 'samtools', 'sort top', src_command, config$verbose)
   }else{
-    skipProcess(config$myAppName, 'Bamtools', 'sort top', mapping_dir)
+    skipProcess(config$myAppName, 'samtools', 'sort top', mapping_dir)
   }
   if(!checkIfFileExists(paste0(mapping_result_file, ".top.bam.sorted"))) return(NULL)
   
   ######  bamtools - sort bottom
   if(config$overwrite_results | !(file.exists(paste0(mapping_result_file, ".bottom.bam.sorted")))) {
-    src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " sort ",
-                          " -in ", paste0(mapping_result_file,".bottom.bam"), 
-                          " -out ", paste0(mapping_result_file,".bottom.bam.sorted"))
-    runSystemCommand(config$myAppName, 'Bamtools', 'sort bottom', src_command, config$verbose)
+    #bamtools deprecated    
+    #src_command <- paste0(file.path(config$anaconda_bin_path,config$bamtools), " sort ",
+    #                      " -in ", paste0(mapping_result_file,".bottom.bam"), 
+    #                      " -out ", paste0(mapping_result_file,".bottom.bam.sorted"))
+    #samtools multithreaded
+    src_command <- paste0(file.path(config$anaconda_bin_path,config$samtools), " sort",
+                          " -@ ", config$threads, " -m 4G",
+                          " -o ", paste0(mapping_result_file,".bottom.bam.sorted"),
+                          " ", paste0(mapping_result_file,".bottom.bam"))
+    runSystemCommand(config$myAppName, 'samtools', 'sort bottom', src_command, config$verbose)
   }else{
-    skipProcess(config$myAppName, 'Bamtools', 'sort bottom', mapping_dir)
+    skipProcess(config$myAppName, 'samtools', 'sort bottom', mapping_dir)
   }
   if(!checkIfFileExists(paste0(mapping_result_file, ".bottom.bam.sorted"))) return(NULL)
   
   ######  picard - MarkDuplicates - top
+  ###### TODO: samtools markdup instead?
   rmdups_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="mark_duplicates_top","temp_results_dirs"], sample_basename)
   rmdups_logfile <- file.path(config$results_path, "logs", paste0(sample_basename, "_", config_tools[config_tools$process=="mark_duplicates_top","logfile"]))
   rmdups_dir <- dirname(rmdups_result_file)
@@ -288,7 +301,8 @@ run_FilterBAM <- function(config, config_tools){
   ######  Samtools - flagstat flagstat_filtered_bam
   flagstat_result_file <- file.path(file.path(config$results_path,"logs"), paste0(sample_basename,"_",config_tools[config_tools$process=="flagstat_filtered_bam","logfile"]))
   if(config$overwrite_results | !(file.exists(paste0(flagstat_result_file)))) {
-    src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools), " flagstat ",  
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools), " flagstat ", 
+                          " -@ ", config$threads," ",
                           paste0(filtered_result_file,".filtered.bam"), 
                           " 1> ", flagstat_result_file)
     runSystemCommand(config$myAppName, 'Samtools', 'flagstat', src_command, config$verbose)
@@ -326,7 +340,9 @@ run_ClipOverlap <- function(config, config_tools){
   
   ######  samtools - index
   if(config$overwrite_results | !(file.exists(paste0(clipping_result_file,".clipped.bam.bai")))) {
-    src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools), " index ", paste0(clipping_result_file,".clipped.bam"))
+    src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools), 
+                          " index ", " -@ ", config$threads," ", 
+                          paste0(clipping_result_file,".clipped.bam"))
     runSystemCommand(config$myAppName, 'Samtools', 'index', src_command, config$verbose)
   }else{
     skipProcess(config$myAppName, 'Samtools', 'index', dirname(clipping_result_file))
@@ -492,7 +508,7 @@ run_Methratio <- function(config, config_tools){
       print(paste0("### Methratio CHR BATCH PROCESSING ###"))
       runSystemCommand(config$myAppName, 'rm', 'tmp folder', paste0("rm -rf ", config$tmp_data_path, "/*"), FALSE)
       print(paste0("Conversion of input clipped.bam to clipped.sam [bamToSam]..."))
-      src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools)," view ", clipping_result_file_bam," > ",clipping_result_file_sam)
+      src_command <- paste0(file.path(config$anaconda_bin_path, config$samtools), " view ", " -@ ", config$threads," ", clipping_result_file_bam," > ",clipping_result_file_sam)
       runSystemCommand(config$myAppName, 'samtools', 'bamView', src_command, config$verbose)
       print(paste0("Splitting clipped sam file..."))
       src_command <- paste0("cd ", dirname(clipping_result_file_sam), "; awk '{print>$3}' ", basename(clipping_result_file_sam), ";")

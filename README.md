@@ -528,8 +528,8 @@ The directory '*results/QC_report/*' contains set of plot files:
 # Version
 For more information please see the file: CHANGES.md
 
-- Version: 1.0.0
-- Date: 20.05.2021
+- Version: 1.0.2
+- Date: 05.08.2021
 
 # Authors
 This tool has been created and implemented by:
