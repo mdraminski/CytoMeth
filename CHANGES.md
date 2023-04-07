@@ -1,4 +1,7 @@
 CytoMeth - Changes
+## Version 1.0.3
+* fixed CytoMethQC script - now all data is loaded from rds results files
+
 ## Version 1.0.2
 * samtools is used for sorting (multithreaded)
 

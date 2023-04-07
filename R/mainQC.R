@@ -1,6 +1,7 @@
 ################################
 ###### get and save SAMPLE_QC_summary ####
-#config <- conf; save = F; result_format = 'bed'; sample_basename <- "DA01"; sample_basename <- "small_FAKE01";
+#config <- conf; result_format = 'rds';
+#sample_basename <- "DA01"; sample_basename <- "small_FAKE01";
 getSampleQCSummary <- function(sample_basename, config, result_format = c('bed','rds')){
   result_format <- checkFormat(result_format, supported = c('bed','rds'))
   config_tools <- read.csv(file.path(config$tools_path, config$tools_config), stringsAsFactors = FALSE)

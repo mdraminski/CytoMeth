@@ -1013,7 +1013,7 @@ bssnper_to_bed <- function(config, config_tools){
 ######  compare BS-Snper and Methratio #######
 #############################################
 ## this function is for testing purposes, it is not part of the main pipeline
- 
+
 # sample_basename <- basename_sample(config$file_bam)
 # methyl_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="methratio","temp_results_dirs"], sample_basename)
 # bssnper_result_file <- file.path(config$results_path, config_tools[config_tools$proces=="bssnper","temp_results_dirs"], sample_basename)
@@ -1023,12 +1023,11 @@ bssnper_to_bed <- function(config, config_tools){
 # attr(meth_data_dst, "name") <- "bssnper"
 # 
 # compareMethData(meth_data_src, meth_data_dst)
- 
 compareMethData <- function(meth_data_src, meth_data_dst){
-
+  
   meth_data_src <- setDT(meth_data_src)[order(chr, start, end),][,c("numCs","numTs","posCs"):=NULL]
   meth_data_dst <- setDT(meth_data_dst)[order(chr, start, end),][,c("numCs","numTs","posCs"):=NULL]
-
+  
   chr_cnt_src <- data.table(table(meth_data_src$chr,meth_data_src$context))
   #names(chr_cnt_src) <- c("chr", "context", attr(meth_data_src, "name"))
   names(chr_cnt_src) <- c("chr", "context", "src")
@@ -1041,13 +1040,34 @@ compareMethData <- function(meth_data_src, meth_data_dst){
   chr_cnt <- chr_cnt[order(chr,context)]
   chr_cnt <- split(chr_cnt, chr_cnt$context)
   
+  chr_cnt <- lapply(chr_cnt, function(x) {x$diff_src_pct <- 100*abs(x$diff)/abs(x$src); 
+                  x$diff_src_pct <- formatC(x$diff_src_pct,digits=5,format="f");
+                  return(x)})
   #chr_cnt
   
   names(meth_data_src) <- paste0("src_",names(meth_data_src))
   names(meth_data_dst) <- paste0("dst_",names(meth_data_dst))
-  meth_data_full <- dplyr::full_join(meth_data_src, meth_data_dst, by=c('src_chr'='dst_chr','src_start'='dst_start','src_end'='dst_end','src_strand'='dst_strand'))
+  meth_data_full <- dplyr::full_join(meth_data_src, meth_data_dst, by=c('src_chr'='dst_chr','src_start'='dst_start','src_end'='dst_end','src_strand'='dst_strand','src_context'='dst_context'))
+  meth_data_full <- meth_data_full[,c("src_chr", "src_start", "src_end", "src_context","src_strand","src_betaVal","dst_betaVal","src_coverage","dst_coverage")]
+  names(meth_data_full) <- c("chr", "start", "end", "context","strand","src_betaVal","dst_betaVal","src_coverage","dst_coverage")
   #meth_data_full
-
+  
+  meth_data_full$chr <- as.factor(meth_data_full$chr)
+  meth_data_full$source <- NA
+  meth_data_full$source[!is.na(meth_data_full$src_betaVal) & !is.na(meth_data_full$dst_betaVal)] <- "common"
+  meth_data_full$source[is.na(meth_data_full$src_betaVal)] <- "dst"
+  meth_data_full$source[is.na(meth_data_full$dst_betaVal)] <- "src"
+  meth_data_full$source <- as.factor(meth_data_full$source)
+  
+  meth_data_summary <- meth_data_full[,.(src_betaVal=mean(src_betaVal),dst_betaVal=mean(dst_betaVal),
+                                         src_coverage=mean(src_coverage),dst_coverage=mean(dst_coverage),cnt=.N), by=source]
+  
+  meth_data_summary <- dplyr::left_join(meth_data_summary, 
+                                        meth_data_full[(src_betaVal==0 & is.na(dst_betaVal)) | (is.na(src_betaVal) & dst_betaVal==0) | (src_betaVal==0 & dst_betaVal==0),
+                                                       .(src_coverage_zero=mean(src_coverage),dst_coverage_zero=mean(dst_coverage),cnt_zero=.N), by=source], by="source")
+  
+  meth_data_summary$freq_zero <- meth_data_summary$cnt_zero/meth_data_summary$cnt
+  meth_data_summary <- meth_data_summary[, lapply(.SD, function(x) formatC(x,digits=5,format="f")), source]
   
   meth_compare <- data.table(metric="meth_sum", value = nrow(meth_data_full))
   meth_compare <- rbind(meth_compare, data.table(metric="meth_common", value = sum(!is.na(meth_data_full$src_betaVal) & !is.na(meth_data_full$dst_betaVal)) ))
@@ -1062,17 +1082,15 @@ compareMethData <- function(meth_data_src, meth_data_dst){
   meth_compare <- rbind(meth_compare, data.table(metric="meth_diff_less_0.1", value = sum(abs(beta_diff)<0.1), pct = 100* sum(abs(beta_diff)<0.1)/meth_compare$value[meth_compare$metric=="meth_common"] ))
   meth_compare <- rbind(meth_compare, data.table(metric="meth_diff_less_0.5", value = sum(abs(beta_diff)<0.5), pct = 100* sum(abs(beta_diff)<0.5)/meth_compare$value[meth_compare$metric=="meth_common"] ))
   meth_compare <- rbind(meth_compare, data.table(metric="meth_diff_less_0.9", value = sum(abs(beta_diff)<0.9), pct = 100* sum(abs(beta_diff)<0.9)/meth_compare$value[meth_compare$metric=="meth_common"] ))
+  meth_compare <- meth_compare[, lapply(.SD, function(x) formatC(x,digits=5,format="f")), metric]
   #meth_compare
-
-  meth_data_diff <- meth_data_full[is.na(meth_data_full$beta_diff) | meth_data_full$beta_diff>=0.1]
-
+  
   gg_beta_diff <- ggplot(dplyr::sample_n(data.table(beta_diff=beta_diff), size=min(c(100000, length(beta_diff))) ) , aes(x=beta_diff)) + 
     geom_histogram(aes(y=..density..), breaks=seq(-1,1,0.1), colour="black", fill="white")+
     geom_density(alpha=.2, fill="#FF6666") 
-
-  retlist <- list(chr_cnt = chr_cnt, meth_compare = meth_compare, meth_data_diff = meth_data_diff, gg_beta_diff = gg_beta_diff)
+  
+  retlist <- list(chr_cnt = chr_cnt, meth_compare = meth_compare, meth_data_diff = meth_data_full, 
+                  meth_data_summary = meth_data_summary, gg_beta_diff = gg_beta_diff)
   
   return(retlist)
 }
-
-

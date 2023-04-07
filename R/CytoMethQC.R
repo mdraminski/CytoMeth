@@ -25,7 +25,7 @@ for(i in 1:length(conf$meth_tool)){
   gg <- plotBetaValuesSummary(methData, conf, meth_tool, sample_size = 100000, save = save)
   
   # Context: CpG
-  methData <- readMethData(conf, meth_tool, context = c("CG"), context_label = 'CpG', min_coverage = 10)
+  methData <- readMethData(conf, meth_tool, context = c("CG"), context_label = 'CpG', min_coverage = 10, result_format = c('rds'))
   #gg <- plotSingleMethStats(methData[[1]])
   gg <- plotMethStats(methData, conf, meth_tool, save = save)
   gg <- plotBetaValuesSummary(methData, conf, meth_tool, sample_size = 100000, save = save)
